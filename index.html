@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff7ed">
+  <title>Ficha Técnica &amp; Precificação</title>
+  <style>
+    :root{color-scheme:light dark;--bg:#fffaf5;--surface:#fff;--surface-2:#fff7ed;--text:#292524;--muted:#78716c;--border:#e7e5e4;--accent:#c2410c;--accent-soft:#ffedd5;--good:#15803d;--bad:#b91c1c;--shadow:0 10px 28px #2925240b}
+    @media(prefers-color-scheme:dark){:root{--bg:#1c1917;--surface:#292524;--surface-2:#332a25;--text:#fafaf9;--muted:#c0b9b3;--border:#44403c;--accent:#fb923c;--accent-soft:#431f0e;--good:#4ade80;--bad:#f87171;--shadow:0 12px 30px #0003}}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}header{padding:24px max(18px,calc((100vw - 1200px)/2));background:var(--surface);border-bottom:1px solid var(--border)}h1{font-size:clamp(1.45rem,3vw,2rem);margin:0 0 16px;letter-spacing:-.03em}.brand{color:var(--accent)}main{max-width:1200px;margin:auto;padding:20px 18px 56px}.tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}.tab{white-space:nowrap;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--muted);padding:9px 14px}.tab.active{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);font-weight:700}.panel{display:none}.panel.active{display:block}.toolbar,.row,.inline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.toolbar{justify-content:space-between;margin:10px 0 16px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--border);border-radius:9px;padding:8px 12px;background:var(--surface);color:var(--text)}.btn:hover{border-color:var(--accent);color:var(--accent)}.btn.primary{background:var(--accent);border-color:var(--accent);color:white;font-weight:650}.btn.danger{color:var(--bad)}.btn.small{font-size:.86rem;padding:5px 9px}.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin:12px 0;box-shadow:var(--shadow)}.card h2,.card h3{margin:0 0 12px}.card h2{font-size:1.13rem}.card h3{font-size:1rem}.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.field{display:flex;flex-direction:column;gap:5px;min-width:0}.field label,.label{font-size:.84rem;color:var(--muted);font-weight:600}.field input,.field select,.cell-input,.cell-select,textarea{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 9px;color:var(--text);width:100%;min-width:0}.field input:focus,.cell-input:focus,.field select:focus,textarea:focus{outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent);border-color:var(--accent)}.field input[type=number],.cell-input[type=number]{font-variant-numeric:tabular-nums}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:670px}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:middle}th{font-size:.8rem;color:var(--muted);font-weight:650}td.numeric,th.numeric{text-align:right;font-variant-numeric:tabular-nums}.cell-input{min-width:90px;padding:7px}.cell-input.name{min-width:135px}.cell-select{padding:7px;min-width:80px}.empty{color:var(--muted);padding:20px;text-align:center}.summary{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}.metric{display:flex;flex-direction:column;gap:2px}.metric strong{font-size:1.12rem;font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.good{color:var(--good)}.bad{color:var(--bad)}.notice{padding:12px 14px;background:var(--accent-soft);border-radius:10px;color:var(--text);margin:12px 0}.warning{background:color-mix(in srgb,var(--bad) 12%,var(--surface));border-left:3px solid var(--bad)}.category-title{margin:25px 0 8px;color:var(--accent);font-size:1.1rem}.product-card{padding:0;overflow:hidden}.product-head{padding:15px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.product-head h2{margin:0}.product-body{padding:0 16px 16px}.product-body .table-wrap{margin:10px 0}.collapsed-info{color:var(--muted);font-size:.88rem}.checkline{display:flex;align-items:center;gap:7px;white-space:nowrap}.checkline input{accent-color:var(--accent)}.filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.filter{border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:6px 11px;color:var(--muted)}.filter.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}.stat{background:var(--surface-2);border-radius:11px;padding:13px}.stat span{display:block;color:var(--muted);font-size:.8rem}.stat strong{font-size:1.22rem}.chart{margin:14px 0}.bar-row{display:grid;grid-template-columns:minmax(110px,180px) minmax(80px,1fr) 90px;gap:10px;align-items:center;margin:9px 0;font-size:.88rem}.bar-track{height:13px;background:var(--surface-2);border-radius:9px;overflow:hidden}.bar{height:100%;border-radius:9px;background:var(--accent);min-width:1px}.bar.goodbar{background:var(--good)}.bar.badbar{background:var(--bad)}.bar-value{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}.report{line-height:1.65}.report h1,.report h2,.report h3{margin:1.2em 0 .45em}.report h1{font-size:1.45rem}.report h2{font-size:1.18rem}.report ul{padding-left:22px}.report table{min-width:0;margin:10px 0}.report th,.report td{border:1px solid var(--border)}textarea{min-height:180px;resize:vertical}.footer-note{font-size:.82rem;color:var(--muted)}.api-actions{margin-top:12px}.pill{display:inline-block;background:var(--surface-2);border:1px solid var(--border);padding:3px 8px;border-radius:20px;font-size:.8rem}@media(max-width:600px){header{padding:18px 14px}main{padding:15px 12px 40px}.card{padding:13px}.bar-row{grid-template-columns:95px minmax(60px,1fr) 75px;font-size:.8rem}.product-head{align-items:flex-start}.toolbar{align-items:flex-start}table{min-width:620px}}
+    [hidden]{display:none!important}
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span class="brand">Ficha Técnica</span> &amp; Precificação</h1>
+    <div id="sessao-controles" class="toolbar" hidden>
+      <span id="status-sincronizacao" class="muted" role="status"></span>
+      <button id="recarregar-remoto" class="btn small" type="button" hidden>Carregar versão do servidor</button>
+      <button id="exportar-dados" class="btn small" type="button">Exportar JSON</button>
+      <button id="importar-dados" class="btn small" type="button">Importar JSON</button>
+      <input id="arquivo-dados" type="file" accept=".json,application/json" hidden>
+      <button id="sair" class="btn small" type="button">Sair</button>
+    </div>
+    <nav class="tabs" aria-label="Seções" hidden>
+      <button class="tab active" data-tab="insumos">1. Insumos</button>
+      <button class="tab" data-tab="fichas">2. Fichas técnicas</button>
+      <button class="tab" data-tab="cmo">3. Custos mensais (CMO)</button>
+      <button class="tab" data-tab="precificacao">4. Precificação</button>
+      <button class="tab" data-tab="analise">5. Análise com IA</button>
+    </nav>
+  </header>
+  <main>
+    <section id="login-screen" class="card" hidden>
+      <h2>Acesso ao aplicativo</h2>
+      <p class="muted">Entre com o e-mail convidado para acessar os dados compartilhados da hamburgueria.</p>
+      <form id="form-login" class="grid">
+        <div class="field"><label for="login-email">E-mail</label><input id="login-email" type="email" autocomplete="username" required></div>
+        <div class="field"><label for="login-senha">Senha</label><input id="login-senha" type="password" autocomplete="current-password" required></div>
+        <button class="btn primary" type="submit">Entrar</button>
+      </form>
+      <form id="form-definir-senha" class="grid" hidden>
+        <div class="field"><label for="nova-senha">Crie sua senha</label><input id="nova-senha" type="password" autocomplete="new-password" minlength="8" required></div>
+        <button class="btn primary" type="submit">Definir senha e entrar</button>
+      </form>
+      <p id="login-status" class="muted" role="status"></p>
+    </section>
+    <div id="app-shell" hidden>
+      <section class="panel active" id="panel-insumos"></section>
+      <section class="panel" id="panel-fichas"></section>
+      <section class="panel" id="panel-cmo"></section>
+      <section class="panel" id="panel-precificacao"></section>
+      <section class="panel" id="panel-analise"></section>
+      <section id="confirmar-importacao" class="card" hidden>
+        <p id="detalhe-importacao"></p>
+        <div class="actions"><button id="confirmar-importacao-btn" class="btn danger" type="button">Confirmar substituição dos dados</button><button id="cancelar-importacao-btn" class="btn" type="button">Cancelar</button></div>
+      </section>
+    </div>
+  </main>
+<script>
+/* Modelo simples e fácil de trocar para outra versão disponível na conta Anthropic. */
+const MODELO_ANTHROPIC = "claude-3-5-sonnet-20241022";
+const SUPABASE_URL = "https://emphwdwkdoosdchwefmf.supabase.co";
+const SUPABASE_PUBLIC_KEY = "sb_publishable_5GWJrfCbsHXI4AVkIvJ6Dg_v3vnbdub";
+const TABELA_COMPARTILHADA = "app_state";
+const CATEGORIAS = ["Lanche", "Bebida", "Porções", "Almoço", "Sobremesa", "Combo"];
+const UNIDADES = ["g", "kg", "ml", "L", "un"];
+const VERSAO_IMPORTACAO = "hamburgueria-2026-11-v2";
+const uid = () => Math.random().toString(36).slice(2, 10);
+const exemplo = {
+  insumos:[],fichas:[],custos:[],faturamento:0,imposto:0,taxas:0,margemPadrao:0,
+  chaveApi:"",categoriaFiltro:"Todas",ultimaAnalise:"",versaoImportacao:VERSAO_IMPORTACAO
+};
+let dados = carregarDados();
+let abaAtiva = "insumos";
+let sessaoSupabase = null;
+let sincronizacaoPendente = false;
+let sincronizacaoEmCurso = false;
+let conflitoSincronizacao = false;
+let revisaoLocal = 0;
+let carimboRemoto = null;
+let temporizadorSync = null;
+let temporizadorPolling = null;
+let convitePendente = false;
+let dadosImportarPendentes = null;
+const modoLocal = location.protocol === "file:";
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+function carregarDados(){
+  try{
+    const salvo=localStorage.getItem("ft1");
+    const obj=salvo?JSON.parse(salvo):null;
+    if(!obj||obj.versaoImportacao!==VERSAO_IMPORTACAO){
+      const inicial=structuredClone(exemplo);
+      try{localStorage.setItem("ft1",JSON.stringify(inicial))}catch(erro){console.warn("Não foi possível salvar os dados importados no localStorage.",erro)}
+      return inicial;
+    }
+    return {...structuredClone(exemplo),...obj,
+      insumos:Array.isArray(obj.insumos)?obj.insumos:structuredClone(exemplo.insumos),
+      fichas:Array.isArray(obj.fichas)?obj.fichas:structuredClone(exemplo.fichas),
+      custos:Array.isArray(obj.custos)?obj.custos:structuredClone(exemplo.custos)};
+  }catch(erro){console.warn("Não foi possível carregar os dados salvos; usando os dados de exemplo.",erro);return structuredClone(exemplo)}
+}
+function salvar(){
+  try{dados.versaoImportacao=VERSAO_IMPORTACAO;localStorage.setItem("ft1",JSON.stringify(dados))}
+  catch(erro){console.warn("Não foi possível salvar os dados locais.",erro);mensagem("Não foi possível salvar uma cópia local dos dados.")}
+  if(sessaoSupabase)agendarSincronizacao();
+}
+function mostrarLogin(texto=""){
+  $("#login-screen").hidden=false;$("#app-shell").hidden=true;$(".tabs").hidden=true;$("#sessao-controles").hidden=true;
+  $("#form-login").hidden=false;$("#form-definir-senha").hidden=true;
+  $("#login-status").textContent=texto;
+}
+function mostrarAplicativo(){
+  $("#login-screen").hidden=true;$("#app-shell").hidden=false;$(".tabs").hidden=false;$("#sessao-controles").hidden=false;
+  $("#status-sincronizacao").textContent=modoLocal?"Modo local: dados só neste navegador.":`Conectado${sessaoSupabase?.user?.email?` como ${sessaoSupabase.user.email}`:""}`;
+  $("#sair").hidden=modoLocal;
+  renderTudo();
+}
+function guardarSessao(session){
+  sessaoSupabase=session;
+  try{localStorage.setItem("ft1_auth",JSON.stringify(session))}
+  catch(erro){console.warn("Não foi possível persistir a sessão autenticada.",erro)}
+}
+function limparSessao(){sessaoSupabase=null;try{localStorage.removeItem("ft1_auth")}catch(erro){console.warn("Não foi possível limpar a sessão local.",erro)}}
+function mensagemApi(resposta,corpo){
+  const detalhe=corpo?.msg||corpo?.message||corpo?.error_description||corpo?.error;
+  return detalhe?`${resposta.status}: ${detalhe}`:`Falha na comunicação com o Supabase (${resposta.status}).`;
+}
+async function chamadaAuth(path,body,method="POST"){
+  const resposta=await fetch(`${SUPABASE_URL}/auth/v1/${path}`,{method,headers:{"content-type":"application/json","apikey":SUPABASE_PUBLIC_KEY},body:body?JSON.stringify(body):undefined});
+  let corpo={};try{corpo=await resposta.json()}catch{}
+  if(!resposta.ok)throw new Error(mensagemApi(resposta,corpo));
+  return corpo;
+}
+async function atualizarToken(){
+  if(!sessaoSupabase?.refresh_token)throw new Error("Sua sessão expirou. Entre novamente.");
+  const nova=await chamadaAuth("token?grant_type=refresh_token",{refresh_token:sessaoSupabase.refresh_token});
+  guardarSessao(nova);return nova;
+}
+async function tokenValido(){
+  if(!sessaoSupabase?.access_token)throw new Error("Entre para acessar os dados.");
+  if(Number(sessaoSupabase.expires_at||0)<Date.now()/1000+60)return (await atualizarToken()).access_token;
+  return sessaoSupabase.access_token;
+}
+async function chamadaBanco(path,opcoes={}){
+  const token=await tokenValido();
+  const resposta=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...opcoes,headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:`Bearer ${token}`,"content-type":"application/json",...(opcoes.headers||{})}});
+  const texto=await resposta.text();let corpo=null;try{corpo=texto?JSON.parse(texto):null}catch{}
+  if(!resposta.ok)throw new Error(mensagemApi(resposta,corpo));
+  return corpo;
+}
+async function lerDadosRemotos(){
+  const linhas=await chamadaBanco(`${TABELA_COMPARTILHADA}?id=eq.main&select=data,updated_at`,{headers:{Accept:"application/json"}});
+  return Array.isArray(linhas)?linhas[0]||null:null;
+}
+async function gravarDadosRemotos(esperado=null,conteudo=dados,revisao=null){
+  const agora=new Date().toISOString();
+  const body=JSON.stringify({id:"main",data:conteudo,updated_at:agora});
+  let linha;
+  if(esperado){
+    const filtro=encodeURIComponent(esperado);
+    const linhas=await chamadaBanco(`${TABELA_COMPARTILHADA}?id=eq.main&updated_at=eq.${filtro}`,{method:"PATCH",headers:{Prefer:"return=representation"},body});
+    linha=Array.isArray(linhas)?linhas[0]:null;
+    if(!linha)throw new Error("Os dados foram alterados por outra pessoa. Copie suas mudanças antes de recarregar para não sobrescrevê-las.");
+  }else{
+    const linhas=await chamadaBanco(TABELA_COMPARTILHADA,{method:"POST",headers:{Prefer:"return=representation"},body});
+    linha=Array.isArray(linhas)?linhas[0]:null;
+  }
+  if(!linha)throw new Error("O Supabase não confirmou a gravação dos dados compartilhados.");
+  carimboRemoto=linha.updated_at;
+  if(revisao===null||revisao===revisaoLocal)sincronizacaoPendente=false;
+}
+async function carregarOuCriarDadosRemotos(){
+  let linha=await lerDadosRemotos();
+  if(!linha){
+    try{await gravarDadosRemotos();linha=await lerDadosRemotos()}
+    catch(erro){
+      if(!String(erro.message).includes("409"))throw erro;
+      linha=await lerDadosRemotos();
+    }
+  }
+  if(!linha?.data||typeof linha.data!=="object")throw new Error("O registro compartilhado existe, mas os dados estão inválidos.");
+  dados={...structuredClone(exemplo),...linha.data,
+    insumos:Array.isArray(linha.data.insumos)?linha.data.insumos:structuredClone(exemplo.insumos),
+    fichas:Array.isArray(linha.data.fichas)?linha.data.fichas:structuredClone(exemplo.fichas),
+    custos:Array.isArray(linha.data.custos)?linha.data.custos:structuredClone(exemplo.custos)};
+  carimboRemoto=linha.updated_at;
+  try{localStorage.setItem("ft1",JSON.stringify(dados))}catch(erro){console.warn("Não foi possível salvar cópia local dos dados remotos.",erro)}
+}
+function agendarSincronizacao(){
+  if(conflitoSincronizacao)return;
+  revisaoLocal++;
+  sincronizacaoPendente=true;
+  $("#status-sincronizacao").textContent="Salvando alterações…";
+  clearTimeout(temporizadorSync);
+  temporizadorSync=setTimeout(sincronizarDados,700);
+}
+async function sincronizarDados(){
+  if(!sessaoSupabase||sincronizacaoEmCurso||!sincronizacaoPendente||conflitoSincronizacao)return;
+  sincronizacaoEmCurso=true;
+  const revisao=revisaoLocal,copia=structuredClone(dados);
+  let falhaTemporaria=false;
+  try{
+    await gravarDadosRemotos(carimboRemoto,copia,revisao);
+    if(revisao===revisaoLocal)$("#status-sincronizacao").textContent="Todas as alterações foram salvas.";
+  }catch(erro){
+    console.error("Falha ao sincronizar com Supabase:",erro);
+    $("#status-sincronizacao").textContent=erro.message;
+    if(/alterados por outra pessoa/i.test(erro.message)){conflitoSincronizacao=true;$("#recarregar-remoto").hidden=false}
+    else falhaTemporaria=erro instanceof TypeError||/\b5\d\d\b/.test(erro.message);
+  }finally{
+    sincronizacaoEmCurso=false;
+    if(sincronizacaoPendente&&!conflitoSincronizacao)setTimeout(sincronizarDados,falhaTemporaria?10000:0);
+  }
+}
+$("#recarregar-remoto").addEventListener("click",async()=>{
+  try{
+    const remoto=await lerDadosRemotos();if(!remoto)throw new Error("Não há dados compartilhados para carregar.");
+    dados={...structuredClone(exemplo),...remoto.data,
+      insumos:Array.isArray(remoto.data.insumos)?remoto.data.insumos:[],
+      fichas:Array.isArray(remoto.data.fichas)?remoto.data.fichas:[],
+      custos:Array.isArray(remoto.data.custos)?remoto.data.custos:[]};
+    carimboRemoto=remoto.updated_at;sincronizacaoPendente=false;conflitoSincronizacao=false;$("#recarregar-remoto").hidden=true;
+    try{localStorage.setItem("ft1",JSON.stringify(dados))}catch(erro){console.warn("Não foi possível atualizar cópia local.",erro)}
+    renderTudo();$("#status-sincronizacao").textContent="Versão do servidor carregada.";
+  }catch(erro){console.error("Falha ao recarregar os dados compartilhados:",erro);$("#status-sincronizacao").textContent=erro.message}
+});
+async function verificarAtualizacoesRemotas(){
+  if(!sessaoSupabase||sincronizacaoPendente||sincronizacaoEmCurso)return;
+  try{
+    const remoto=await lerDadosRemotos();
+    if(remoto&&remoto.updated_at!==carimboRemoto){
+      dados={...structuredClone(exemplo),...remoto.data,
+        insumos:Array.isArray(remoto.data.insumos)?remoto.data.insumos:[],
+        fichas:Array.isArray(remoto.data.fichas)?remoto.data.fichas:[],
+        custos:Array.isArray(remoto.data.custos)?remoto.data.custos:[]};
+      carimboRemoto=remoto.updated_at;
+      try{localStorage.setItem("ft1",JSON.stringify(dados))}catch(erro){console.warn("Não foi possível atualizar cópia local.",erro)}
+      renderTudo();$("#status-sincronizacao").textContent="Dados atualizados por outro usuário.";
+    }
+  }catch(erro){console.error("Falha ao verificar atualizações remotas:",erro);$("#status-sincronizacao").textContent="Sem conexão com o banco; tentando novamente."}
+}
+async function iniciarAplicativo(){
+  if(modoLocal){mostrarAplicativo();return}
+  const hash=new URLSearchParams(location.hash.slice(1)),accessToken=hash.get("access_token"),refreshToken=hash.get("refresh_token");
+  if(accessToken&&refreshToken){
+    convitePendente=["invite","recovery"].includes(hash.get("type"));
+    guardarSessao({access_token:accessToken,refresh_token:refreshToken,expires_at:Number(hash.get("expires_at"))||Date.now()/1000+Number(hash.get("expires_in")||3600)});
+    history.replaceState(null,"",location.pathname+location.search);
+  }else{
+    try{sessaoSupabase=JSON.parse(localStorage.getItem("ft1_auth")||"null")}catch(erro){console.warn("Sessão local inválida.",erro);limparSessao()}
+  }
+  if(!sessaoSupabase){mostrarLogin();return}
+  try{
+    await tokenValido();
+    await carregarOuCriarDadosRemotos();
+    mostrarAplicativo();
+    if(convitePendente){$("#login-screen").hidden=false;$("#app-shell").hidden=true;$(".tabs").hidden=true;$("#form-login").hidden=true;$("#form-definir-senha").hidden=false;$("#login-status").textContent="Convite confirmado. Crie uma senha para continuar."}
+    temporizadorPolling=setInterval(verificarAtualizacoesRemotas,10000);
+  }catch(erro){
+    console.error("Falha ao iniciar sessão compartilhada:",erro);
+    if(/401|403|JWT|expirou/i.test(erro.message)){limparSessao();mostrarLogin("Sessão inválida ou expirada. Entre novamente.")}
+    else{mostrarLogin(`Não foi possível carregar os dados compartilhados: ${erro.message}`)}
+  }
+}
+function escapeHtml(valor){return String(valor??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function n(valor){const x=Number(String(valor??"").replace(",", "."));return Number.isFinite(x)?x:0}
+function moeda(valor){return Number.isFinite(valor)?valor.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}):"—"}
+function pct(valor){return Number.isFinite(valor)?`${valor.toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})}%`:"—"}
+function fmt(valor,casas=2){return Number.isFinite(valor)?valor.toLocaleString("pt-BR",{minimumFractionDigits:casas,maximumFractionDigits:casas}):"—"}
+function mensagem(texto,tipo="notice"){const aviso=document.createElement("div");aviso.className=`notice ${tipo==="erro"?"warning":""}`;aviso.textContent=texto;const main=$("main");main.prepend(aviso);setTimeout(()=>aviso.remove(),5500)}
+function acharInsumo(id){return dados.insumos.find(x=>x.id===id)}
+function acharFicha(id){return dados.fichas.find(x=>x.id===id)}
+function custoInsumo(insumo){return insumo&&n(insumo.quantidade)>0?n(insumo.preco)/n(insumo.quantidade):0}
+function fatorConversao(origem,destino){
+  if(origem===destino)return 1;
+  const grupos={g:{"kg":1000},kg:{"g":.001},ml:{"L":1000},L:{"ml":.001},un:{}};
+  return grupos[origem]?.[destino]||0;
+}
+function custoItem(item,stack=[]){
+  if(item.tipo==="ficha"){
+    const ficha=acharFicha(item.referencia);
+    if(!ficha||stack.includes(ficha.id))return 0;
+    return n(item.quantidade)*cmvFicha(ficha,stack);
+  }
+  const insumo=acharInsumo(item.referencia),base=custoInsumo(insumo);
+  if(!insumo)return 0;
+  const fator=fatorConversao(insumo.unidade,item.unidade);
+  return fator?Math.round(base*n(item.quantidade)*fator*100)/100:0;
+}
+function totalFicha(ficha,stack=[]){if(stack.includes(ficha.id))return 0;if(!ficha.itens.length&&Number.isFinite(ficha.cmvImportado))return ficha.cmvImportado*Math.max(n(ficha.porcoes),.000001);return ficha.itens.reduce((s,item)=>s+custoItem(item,[...stack,ficha.id]),0)}
+function cmvFicha(ficha,stack=[]){if(!ficha.itens.length&&Number.isFinite(ficha.cmvImportado))return ficha.cmvImportado;return totalFicha(ficha,stack)/Math.max(n(ficha.porcoes),.000001)}
+function totalCustos(){return dados.custos.reduce((s,c)=>s+n(c.valor),0)}
+function cmo(){return n(dados.faturamento)>0?totalCustos()/n(dados.faturamento)*100:NaN}
+function margemFicha(ficha){return ficha.margem!==""&&ficha.margem!=null?n(ficha.margem):n(dados.margemPadrao)}
+function cmoAplicado(){return Number.isFinite(cmo())?cmo():0}
+function deducoes(ficha){return cmoAplicado()+n(dados.imposto)+n(dados.taxas)+margemFicha(ficha)}
+function precoSugerido(ficha){const divisor=1-deducoes(ficha)/100;return divisor>0?cmvFicha(ficha)/divisor:NaN}
+function lucroReal(ficha){const v=n(ficha.precoAtual);if(!Number.isFinite(cmo())&&v===n(ficha.precoAtualImportado)&&Number.isFinite(ficha.lucroRealImportado))return ficha.lucroRealImportado;return v*(1-(cmoAplicado()+n(dados.imposto)+n(dados.taxas))/100)-cmvFicha(ficha)}
+function margemReal(ficha){return n(ficha.precoAtual)>0?lucroReal(ficha)/n(ficha.precoAtual)*100:NaN}
+function rotuloPreco(ficha){return deducoes(ficha)>=100?"Deduções ≥ 100%":"—"}
+function renderTudo(){renderInsumos();renderFichas();renderCmo();renderPrecificacao();renderAnalise();alternarAba(abaAtiva)}
+function alternarAba(nome){
+ abaAtiva=nome;
+ if(nome==="insumos")renderInsumos();
+ if(nome==="fichas")renderFichas();
+ if(nome==="cmo")renderCmo();
+ if(nome==="precificacao")renderPrecificacao();
+ if(nome==="analise")renderAnalise();
+ $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===nome));$$(".panel").forEach(p=>p.classList.toggle("active",p.id===`panel-${nome}`))
+}
+function renderInsumos(){
+  const p=$("#panel-insumos");
+  p.innerHTML=`<div class="toolbar"><div><h2>Insumos</h2><div class="muted">Cadastre o custo de compra; as fichas calculam automaticamente o custo proporcional.</div></div><button class="btn primary" data-action="novo-insumo">+ Novo insumo</button></div>
+  <div class="card table-wrap"><table><thead><tr><th>Nome</th><th>Unidade</th><th class="numeric">Preço pago</th><th class="numeric">Quantidade na compra</th><th class="numeric">Custo por unidade</th><th></th></tr></thead><tbody>${dados.insumos.length?dados.insumos.map(i=>`<tr data-insumo="${escapeHtml(i.id)}"><td><input class="cell-input name" data-field="nome" value="${escapeHtml(i.nome)}" aria-label="Nome do insumo"></td><td><select class="cell-select" data-field="unidade">${UNIDADES.map(u=>`<option ${u===i.unidade?"selected":""}>${u}</option>`).join("")}</select></td><td><input class="cell-input" type="number" min="0" step="0.01" data-field="preco" value="${escapeHtml(i.preco)}" aria-label="Preço pago"></td><td><input class="cell-input" type="number" min="0" step="any" data-field="quantidade" value="${escapeHtml(i.quantidade)}" aria-label="Quantidade na compra"></td><td class="numeric"><span id="custo-insumo-${escapeHtml(i.id)}">${moeda(custoInsumo(i))} / ${escapeHtml(i.unidade)}</span></td><td>${botaoExcluir("insumo",i.id)}</td></tr>`).join(""):`<tr><td class="empty" colspan="6">Nenhum insumo cadastrado.</td></tr>`}</tbody></table></div>`;
+}
+function botaoExcluir(tipo,id){return `<span class="delete-box" data-delete-box="${tipo}-${escapeHtml(id)}"><button class="btn small danger" data-action="pedir-exclusao" data-tipo="${tipo}" data-id="${escapeHtml(id)}">Excluir</button></span>`}
+function optionsInsumos(sel){return `<option value="">Selecione</option>${dados.insumos.map(i=>`<option value="${escapeHtml(i.id)}" ${i.id===sel?"selected":""}>${escapeHtml(i.nome)} (${escapeHtml(i.unidade)})</option>`).join("")}`}
+function opcoesUnidade(item){
+  const ins=acharInsumo(item.referencia), opts=ins?UNIDADES.filter(u=>u===ins.unidade||fatorConversao(ins.unidade,u)>0):UNIDADES;
+  return opts.map(u=>`<option ${u===item.unidade?"selected":""}>${u}</option>`).join("");
+}
+function seletorItem(ficha,item){
+  if(ficha.combo){
+    const fichas=dados.fichas.filter(f=>!f.combo&&f.id!==ficha.id);
+    return `<select class="cell-select" data-field="referencia" aria-label="Ingrediente"><option value="">Selecione</option><optgroup label="Lanches / fichas">${fichas.map(f=>`<option value="f:${escapeHtml(f.id)}" ${item.tipo==="ficha"&&item.referencia===f.id?"selected":""}>${escapeHtml(f.nome)}</option>`).join("")}</optgroup><optgroup label="Insumos">${dados.insumos.map(i=>`<option value="i:${escapeHtml(i.id)}" ${item.tipo==="insumo"&&item.referencia===i.id?"selected":""}>${escapeHtml(i.nome)} (${escapeHtml(i.unidade)})</option>`).join("")}</optgroup></select>`;
+  }
+  return `<select class="cell-select" data-field="referencia" aria-label="Ingrediente">${optionsInsumos(item.referencia)}</select>`;
+}
+function renderFicha(f,idx){
+  const total=totalFicha(f),cmv=cmvFicha(f),sug=precoSugerido(f),margemPlaceholder=`placeholder="${escapeHtml(dados.margemPadrao)}"`;
+  const top=`<article class="card product-card" data-ficha="${escapeHtml(f.id)}"><div class="product-head">
+  <div class="inline"><button class="btn small" data-action="toggle-ficha" aria-label="${f.aberta?"Minimizar":"Expandir"} ficha">${f.aberta?"−":"+"}</button><h2>${escapeHtml(f.nome||"Nova ficha")}</h2><span class="pill">${escapeHtml(f.categoria)}</span>${f.combo?'<span class="pill">Combo</span>':""}</div>
+  <div class="actions">${!f.aberta?`<span class="collapsed-info">CMV ${moeda(cmv)} · Sugerido ${Number.isFinite(sug)?moeda(sug):rotuloPreco(f)} · Atual ${n(f.precoAtual)>0?moeda(n(f.precoAtual)):"—"}</span>`:""}<button class="btn small" data-action="copiar-ficha">Copiar</button>${botaoExcluir("ficha",f.id)}</div></div>`;
+  if(!f.aberta)return top+"</article>";
+  return `${top}<div class="product-body"><div class="grid">
+    <div class="field"><label>Nome</label><input data-field="nome" class="cell-input" value="${escapeHtml(f.nome)}"></div>
+    <div class="field"><label>Categoria</label><select data-field="categoria">${CATEGORIAS.map(c=>`<option ${f.categoria===c?"selected":""}>${c}</option>`).join("")}</select></div>
+    <label class="checkline"><input type="checkbox" data-field="combo" ${f.combo?"checked":""}> Combo</label>
+    <div class="field"><label>Porções (rendimento)</label><input type="number" min="0.001" step="any" data-field="porcoes" value="${escapeHtml(f.porcoes)}"></div>
+  </div>
+  <div class="table-wrap"><table><thead><tr><th>Ingrediente</th><th class="numeric">Quantidade</th><th>Unidade</th><th class="numeric">Custo da linha</th><th>Ações</th></tr></thead><tbody>${f.itens.map((it,j)=>`<tr data-item="${escapeHtml(it.id)}"><td>${seletorItem(f,it)}</td><td><input class="cell-input" type="number" min="0" step="any" data-field="quantidade" value="${escapeHtml(it.quantidade)}" aria-label="Quantidade"></td><td>${it.tipo==="ficha"?'<span class="pill">un</span>':`<select class="cell-select" data-field="unidade">${opcoesUnidade(it)}</select>`}</td><td class="numeric"><span id="custo-item-${escapeHtml(it.id)}">${moeda(custoItem(it))}</span></td><td class="actions"><button class="btn small" data-action="mover-item" data-dir="-1" aria-label="Subir ingrediente">▲</button><button class="btn small" data-action="mover-item" data-dir="1" aria-label="Descer ingrediente">▼</button>${botaoExcluir("item",it.id)}</td></tr>`).join("")}</tbody></table></div>
+  ${!f.itens.length&&Number.isFinite(f.cmvImportado)?'<div class="notice">CMV, preço sugerido e lucro foram importados do resumo fornecido. Ele não incluía ingredientes nem quantidades; adicione ingredientes para calcular a ficha a partir da receita.</div>':""}
+  <button class="btn small" data-action="novo-item">+ Ingrediente</button>
+  <div class="grid" style="margin-top:15px">
+    <div class="metric"><span class="label">Custo total da ficha</span><strong id="total-${escapeHtml(f.id)}">${moeda(total)}</strong></div>
+    <div class="metric"><span class="label">CMV por unidade</span><strong id="cmv-${escapeHtml(f.id)}">${moeda(cmv)}</strong></div>
+    <div class="field"><label>Margem de lucro desejada (%) <span class="muted">opcional</span></label><input type="number" min="0" step="0.1" data-field="margem" value="${escapeHtml(f.margem)}" ${margemPlaceholder}></div>
+    <div class="metric"><span class="label">Preço de venda sugerido</span><strong id="sugerido-${escapeHtml(f.id)}">${Number.isFinite(sug)?moeda(sug):rotuloPreco(f)}</strong></div>
+    <div class="field"><label>Preço de venda atual (R$)</label><input type="number" min="0" step="0.01" data-field="precoAtual" value="${escapeHtml(f.precoAtual)}"></div>
+    <div class="metric"><span class="label">CMV % do preço atual</span><strong id="cmvpct-${escapeHtml(f.id)}">${n(f.precoAtual)>0?pct(cmv/n(f.precoAtual)*100):"—"}</strong></div>
+    <div class="metric"><span class="label">Margem de lucro real</span><strong id="margem-real-${escapeHtml(f.id)}" class="${margemReal(f)>=0?"good":"bad"}">${pct(margemReal(f))}</strong></div>
+  </div></div></article>`;
+}
+function renderFichas(){
+  const p=$("#panel-fichas"),filtro=dados.categoriaFiltro||"Todas";
+  const contagem=c=>dados.fichas.filter(f=>c==="Todas"||f.categoria===c).length;
+  const filtros=["Todas",...CATEGORIAS].map(c=>`<button class="filter ${filtro===c?"active":""}" data-action="filtro" data-categoria="${c}">${c} (${contagem(c)})</button>`).join("");
+  let corpo="";
+  if(!dados.fichas.length)corpo='<div class="empty card">Nenhuma ficha cadastrada. Adicione uma ficha para começar.</div>';
+  else if(filtro==="Todas")corpo=CATEGORIAS.map(c=>{const arr=dados.fichas.map((f,i)=>({f,i})).filter(x=>x.f.categoria===c);return arr.length?`<h3 class="category-title">${c} (${arr.length})</h3>${arr.map(x=>renderFicha(x.f,x.i)).join("")}`:""}).join("");
+  else corpo=dados.fichas.map((f,i)=>({f,i})).filter(x=>x.f.categoria===filtro).map(x=>renderFicha(x.f,x.i)).join("")||'<div class="empty card">Nenhuma ficha nesta categoria.</div>';
+  p.innerHTML=`<div class="toolbar"><div><h2>Fichas técnicas</h2><div class="muted">Custos por porção, combos e preços sugeridos em um só lugar.</div></div><div class="actions"><button class="btn" data-action="minimizar-todas">Minimizar todas</button><button class="btn" data-action="expandir-todas">Expandir todas</button><button class="btn" data-action="novo-combo">+ Novo combo</button><button class="btn primary" data-action="nova-ficha">+ Nova ficha</button></div></div><div class="filters">${filtros}</div>${corpo}`;
+}
+function renderCmo(){const p=$("#panel-cmo"),total=totalCustos(),percent=n(dados.faturamento)>0?total/n(dados.faturamento)*100:NaN;
+  p.innerHTML=`<div class="toolbar"><div><h2>Custos mensais (CMO)</h2><div class="muted">Custos operacionais médios usados para calcular o custo de mão de obra/operação sobre as vendas.</div></div><button class="btn primary" data-action="novo-custo">+ Adicionar custo</button></div><div class="card table-wrap"><table><thead><tr><th>Custo mensal</th><th class="numeric">Valor (R$)</th><th></th></tr></thead><tbody>${dados.custos.map(c=>`<tr data-custo="${escapeHtml(c.id)}"><td><input class="cell-input name" data-field="nome" value="${escapeHtml(c.nome)}" aria-label="Nome do custo"></td><td><input class="cell-input" type="number" min="0" step="0.01" data-field="valor" value="${escapeHtml(c.valor)}" aria-label="Valor mensal"></td><td>${botaoExcluir("custo",c.id)}</td></tr>`).join("")||'<tr><td class="empty" colspan="3">Nenhum custo cadastrado.</td></tr>'}</tbody></table><div class="grid" style="margin-top:14px"><div class="field"><label>Faturamento médio mensal (R$)</label><input type="number" min="0" step="0.01" data-global="faturamento" value="${escapeHtml(dados.faturamento)}"></div>  <div class="metric"><span class="label">Total de custos</span><strong id="total-custos">${moeda(total)}</strong></div><div class="metric"><span class="label">CMO atual</span><strong id="cmo-atual">${Number.isFinite(percent)?pct(percent):"—"}</strong></div></div><div class="notice warning" id="aviso-faturamento" style="${n(dados.faturamento)===0?"":"display:none"}">Informe um faturamento médio mensal maior que zero para calcular o CMO.</div></div>`;
+}
+function renderPrecificacao(){
+ const p=$("#panel-precificacao"),dedBase=cmo()+n(dados.imposto)+n(dados.taxas),invalida=dados.fichas.some(f=>deducoes(f)>=100);
+ p.innerHTML=`<div class="toolbar"><div><h2>Precificação</h2><div class="muted">Ajuste os parâmetros e compare o preço recomendado com o preço praticado.</div></div></div><div class="card"><div class="grid">
+ <div class="field"><label>Imposto sobre vendas (%)</label><input type="number" min="0" step="0.1" data-global="imposto" value="${escapeHtml(dados.imposto)}"></div>
+ <div class="field"><label>Taxas de cartão/delivery (%)</label><input type="number" min="0" step="0.1" data-global="taxas" value="${escapeHtml(dados.taxas)}"></div>
+ <div class="field"><label>Lucro líquido desejado padrão (%)</label><input type="number" min="0" step="0.1" data-global="margemPadrao" value="${escapeHtml(dados.margemPadrao)}"></div>
+ <div class="metric"><span class="label">CMO atual</span><strong id="prec-cmo">${n(dados.faturamento)>0?pct(cmo()):"—"}</strong></div><div class="metric"><span class="label">Imposto + taxas + lucro desejado (sem CMO)</span><strong id="deducoes-base">${pct(n(dados.imposto)+n(dados.taxas)+n(dados.margemPadrao))}</strong></div></div>
+ <div class="notice warning" id="aviso-cmo-prec" style="${Number.isFinite(cmo())?"display:none":""}">CMO não calculado: informe o faturamento na aba Custos mensais. Até lá, o preço sugerido é estimado sem CMO.</div>
+ <div class="notice warning" id="aviso-deducoes" style="${invalida?"":"display:none"}">A soma das deduções, incluindo a margem desejada do produto, é ≥ 100%. Ajuste os parâmetros ou a margem para calcular preços.</div></div>
+ <div class="card table-wrap" id="tabela-precificacao" style="${invalida?"display:none":""}"><table><thead><tr><th>Produto</th><th class="numeric">CMV</th><th class="numeric">Preço sugerido</th><th class="numeric">Markup</th><th class="numeric">Preço atual</th><th class="numeric">Lucro real (R$ / %)</th></tr></thead><tbody>${dados.fichas.map(f=>`<tr data-produto-prec="${escapeHtml(f.id)}"><td>${escapeHtml(f.nome)}</td><td class="numeric"><span id="prec-cmv-${escapeHtml(f.id)}">${moeda(cmvFicha(f))}</span></td><td class="numeric"><span id="prec-sugerido-${escapeHtml(f.id)}">${Number.isFinite(precoSugerido(f))?moeda(precoSugerido(f)):"—"}</span></td><td class="numeric"><span id="prec-markup-${escapeHtml(f.id)}">${cmvFicha(f)>0&&Number.isFinite(precoSugerido(f))?`${fmt(precoSugerido(f)/cmvFicha(f),2)}×`:"—"}</span></td><td class="numeric"><span id="prec-atual-${escapeHtml(f.id)}">${n(f.precoAtual)>0?moeda(n(f.precoAtual)):"—"}</span></td><td class="numeric"><span id="prec-lucro-${escapeHtml(f.id)}" class="${Number.isFinite(lucroReal(f))?(lucroReal(f)>=0?"good":"bad"):""}">${n(f.precoAtual)>0&&Number.isFinite(lucroReal(f))?`${moeda(lucroReal(f))} / ${pct(lucroReal(f)/n(f.precoAtual)*100)}`:"—"}</span></td></tr>`).join("")||'<tr><td colspan="6" class="empty">Cadastre fichas técnicas para ver a precificação.</td></tr>'}</tbody></table></div>`;
+}
+function dadosAnalise(){
+ const produtos=dados.fichas.map(f=>({nome:f.nome,categoria:f.categoria,combo:f.combo,cmv:cmvFicha(f),precoAtual:n(f.precoAtual),precoSugerido:precoSugerido(f),margemDesejada:margemFicha(f),lucroReal:n(f.precoAtual)>0?lucroReal(f):null,cmvPercentual:n(f.precoAtual)>0?cmvFicha(f)/n(f.precoAtual)*100:null,itens:f.itens.map(it=>({nome:it.tipo==="ficha"?(acharFicha(it.referencia)?.nome||"Ficha removida"):(acharInsumo(it.referencia)?.nome||"Insumo removido"),quantidade:n(it.quantidade),unidade:it.tipo==="ficha"?"un":it.unidade,custo:custoItem(it)}))}));
+ return {parametros:{imposto:n(dados.imposto),taxas:n(dados.taxas),margemPadrao:n(dados.margemPadrao)},faturamentoMensal:n(dados.faturamento),custosMensais:dados.custos.map(c=>({nome:c.nome,valor:n(c.valor)})),totalCustos:totalCustos(),cmo:n(dados.faturamento)>0?cmo():null,insumos:dados.insumos.map(i=>({nome:i.nome,unidade:i.unidade,preco:n(i.preco),quantidade:n(i.quantidade),custoUnidade:custoInsumo(i)})),produtos};
+}
+function resumoLocal(){
+ const d=dadosAnalise(),comPreco=d.produtos.filter(p=>p.precoAtual>0),cmvPct=comPreco.filter(p=>p.cmvPercentual!==null).map(p=>p.cmvPercentual),margens=comPreco.map(p=>p.lucroReal/p.precoAtual*100).filter(Number.isFinite),abaixo=d.cmo===null?null:comPreco.filter(p=>Number.isFinite(p.lucroReal)&&p.lucroReal/p.precoAtual*100<p.margemDesejada).length;
+ return {fichas:d.produtos.length,cmo:d.cmo,cmvMedio:cmvPct.length?cmvPct.reduce((a,b)=>a+b,0)/cmvPct.length:null,margemMedia:margens.length?margens.reduce((a,b)=>a+b,0)/margens.length:null,abaixo,comPreco};
+}
+function barras(titulo,itens,valorFn,formatFn,classeFn,limiteFn){
+ if(!itens.length)return `<div class="chart"><h3>${titulo}</h3><div class="muted">Sem dados disponíveis.</div></div>`;
+ const vals=itens.map(valorFn).filter(Number.isFinite),max=Math.max(...vals.map(v=>Math.abs(v)),1);
+ return `<div class="chart"><h3>${titulo}</h3>${itens.map((it,i)=>{const v=valorFn(it),width=Number.isFinite(v)?Math.min(100,Math.abs(v)/max*100):0;return `<div class="bar-row"><span title="${escapeHtml(it.nome)}">${escapeHtml(it.nome)}</span><div class="bar-track"><div class="bar ${classeFn?classeFn(it,v):""}" style="width:${width}%"></div></div><span class="bar-value">${formatFn(v)}</span></div>`}).join("")}</div>`;
+}
+function renderAnalise(){
+ const p=$("#panel-analise"),d=dadosAnalise(),stats=resumoLocal(),temPreco=stats.comPreco.length>0;
+ const marg=stats.comPreco.map(prod=>({...prod,margemReal:prod.lucroReal/prod.precoAtual*100})).filter(prod=>Number.isFinite(prod.margemReal));
+ const custos=d.custosMensais.map(c=>({...c,percentual:n(d.faturamento)>0?c.valor/n(d.faturamento)*100:null}));
+ const diff=d.produtos.map(prod=>({...prod,diferenca:prod.precoAtual-prod.precoSugerido}));
+ const graphs=temPreco?`${barras("Margem real por produto",marg,x=>x.margemReal,x=>pct(x), (x,v)=>v>=x.margemDesejada?"goodbar":"badbar")}
+ ${barras("CMV % do preço atual (referência: até 35%)",stats.comPreco,x=>x.cmvPercentual,x=>pct(x),(x,v)=>v<=35?"goodbar":"badbar")}
+ ${barras("Preço atual menos preço sugerido",diff.filter(x=>x.precoAtual>0&&Number.isFinite(x.diferenca)),x=>x.diferenca,x=>moeda(x), (x,v)=>v>=0?"goodbar":"badbar")}
+ ${barras("Custos mensais (% do faturamento)",custos.filter(x=>x.valor>0),x=>x.percentual,x=>x===null?"—":pct(x))}`:'<div class="notice">Preencha o preço de venda atual em uma ou mais fichas para visualizar os gráficos de margem e CMV.</div>' ;
+ p.innerHTML=`<div class="toolbar"><div><h2>Análise com IA</h2><div class="muted">Indicadores e gráficos locais funcionam sem chave ou conexão.</div></div><button class="btn" data-action="baixar-relatorio">Baixar relatório</button></div>
+ <div class="card"><h3>Visão geral local</h3><div class="stat-grid"><div class="stat"><span>Nº de fichas</span><strong>${stats.fichas}</strong></div><div class="stat"><span>CMO</span><strong>${stats.cmo===null?"—":pct(stats.cmo)}</strong></div><div class="stat"><span>CMV médio %</span><strong>${stats.cmvMedio===null?"—":pct(stats.cmvMedio)}</strong></div><div class="stat"><span>Margem real média</span><strong>${stats.margemMedia===null?"—":pct(stats.margemMedia)}</strong></div><div class="stat"><span>Abaixo da meta</span><strong>${stats.abaixo===null?"—":stats.abaixo}</strong></div></div>${stats.cmo===null?'<div class="notice warning">Informe o faturamento mensal para calcular CMO, margem real e preços sugeridos.</div>':""}${graphs}</div>
+ <div class="card"><h3>Relatório com IA</h3><div class="field"><label>Chave da API Anthropic</label><input type="password" autocomplete="off" data-global="chaveApi" value="${escapeHtml(dados.chaveApi)}" placeholder="sk-ant-..."></div><p class="footer-note">A chave fica guardada somente neste navegador (localStorage) e é enviada diretamente à API Anthropic quando você solicita uma análise. Não compartilhe este arquivo com a chave preenchida.</p><div class="api-actions"><button class="btn primary" data-action="gerar-analise">Gerar análise com IA</button><span id="status-ia" class="muted" role="status"></span></div>
+ <div id="relatorio-ia" class="report">${dados.ultimaAnalise?markdownHtml(dados.ultimaAnalise):'<p class="muted">A última análise aparecerá aqui. A geração requer uma chave de API Anthropic.</p>'}</div></div>`;
+}
+function atualizarCalculos(){
+ dados.insumos.forEach(i=>{const el=$(`#custo-insumo-${CSS.escape(i.id)}`);if(el)el.textContent=`${moeda(custoInsumo(i))} / ${i.unidade}`});
+ dados.fichas.forEach(f=>{
+   const total=$(`#total-${CSS.escape(f.id)}`),cmv=$(`#cmv-${CSS.escape(f.id)}`),sug=$(`#sugerido-${CSS.escape(f.id)}`),cmvpct=$(`#cmvpct-${CSS.escape(f.id)}`),margemRealEl=$(`#margem-real-${CSS.escape(f.id)}`);
+   if(total)total.textContent=moeda(totalFicha(f));if(cmv)cmv.textContent=moeda(cmvFicha(f));if(sug)sug.textContent=Number.isFinite(precoSugerido(f))?moeda(precoSugerido(f)):rotuloPreco(f);if(cmvpct)cmvpct.textContent=n(f.precoAtual)>0?pct(cmvFicha(f)/n(f.precoAtual)*100):"—";
+   if(margemRealEl){margemRealEl.textContent=pct(margemReal(f));margemRealEl.className=Number.isFinite(margemReal(f))?margemReal(f)>=0?"good":"bad":""}
+   f.itens.forEach(it=>{const el=$(`#custo-item-${CSS.escape(it.id)}`);if(el)el.textContent=moeda(custoItem(it))});
+   const pc=$(`#prec-cmv-${CSS.escape(f.id)}`),ps=$(`#prec-sugerido-${CSS.escape(f.id)}`),pm=$(`#prec-markup-${CSS.escape(f.id)}`),pa=$(`#prec-atual-${CSS.escape(f.id)}`),pl=$(`#prec-lucro-${CSS.escape(f.id)}`);
+   const preco=precoSugerido(f),lucro=lucroReal(f),atual=n(f.precoAtual);
+   if(pc)pc.textContent=moeda(cmvFicha(f));if(ps)ps.textContent=Number.isFinite(preco)?moeda(preco):"—";if(pm)pm.textContent=cmvFicha(f)>0&&Number.isFinite(preco)?`${fmt(preco/cmvFicha(f),2)}×`:"—";if(pa)pa.textContent=atual>0?moeda(atual):"—";
+   if(pl){pl.textContent=atual>0&&Number.isFinite(lucro)?`${moeda(lucro)} / ${pct(lucro/atual*100)}`:"—";pl.className=Number.isFinite(lucro)?lucro>=0?"good":"bad":""}
+ });
+ const total=$("#total-custos"),cmoEl=$("#cmo-atual");if(total)total.textContent=moeda(totalCustos());if(cmoEl)cmoEl.textContent=n(dados.faturamento)>0?pct(cmo()):"—";
+ const pcmo=$("#prec-cmo"),ded=$("#deducoes-base");if(pcmo)pcmo.textContent=n(dados.faturamento)>0?pct(cmo()):"—";if(ded)ded.textContent=pct(n(dados.imposto)+n(dados.taxas)+n(dados.margemPadrao));
+ const aviso=$("#aviso-faturamento");if(aviso)aviso.style.display=n(dados.faturamento)>0?"none":"";
+ const invalida=dados.fichas.some(f=>deducoes(f)>=100),tabela=$("#tabela-precificacao"),warn=$("#aviso-deducoes"),avisoCmo=$("#aviso-cmo-prec");if(tabela)tabela.style.display=invalida?"none":"";if(warn)warn.style.display=invalida?"":"none";if(avisoCmo)avisoCmo.style.display=Number.isFinite(cmo())?"none":"";
+ const nomeInput=$("[data-field='nome']:focus");if(nomeInput){const row=nomeInput.closest("[data-insumo],[data-ficha],[data-custo]");if(row?.dataset.ficha){const h=$(".product-head h2",row);if(h)h.textContent=nomeInput.value||"Nova ficha"}}
+}
+function gravarCampo(target,value){
+ const row=target.closest("[data-insumo],[data-ficha],[data-item],[data-custo]");
+ if(target.dataset.global){dados[target.dataset.global]=target.value;return}
+ if(!row)return;
+ if(row.dataset.insumo){const ins=acharInsumo(row.dataset.insumo);if(ins)ins[target.dataset.field]=target.dataset.field==="nome"||target.dataset.field==="unidade"?value:n(value)}
+ else if(row.dataset.custo){const c=dados.custos.find(x=>x.id===row.dataset.custo);if(c)c[target.dataset.field]=target.dataset.field==="nome"?value:n(value)}
+ else if(row.dataset.ficha){const f=acharFicha(row.dataset.ficha);if(f)f[target.dataset.field]=target.dataset.field==="nome"||target.dataset.field==="categoria"||target.dataset.field==="margem"?value:target.dataset.field==="combo"?target.checked:n(value)}
+ else if(row.dataset.item){const f=dados.fichas.find(x=>x.itens.some(i=>i.id===row.dataset.item)),it=f?.itens.find(i=>i.id===row.dataset.item);if(it)it[target.dataset.field]=target.dataset.field==="quantidade"?n(value):value}
+}
+document.addEventListener("input",e=>{
+ const t=e.target;if(!t.matches("[data-field],[data-global]"))return;
+ gravarCampo(t,t.type==="checkbox"?t.checked:t.value);salvar();atualizarCalculos();
+});
+$("#form-login").addEventListener("submit",async e=>{
+  e.preventDefault();const status=$("#login-status"),botao=$("button[type=submit]",e.currentTarget);
+  botao.disabled=true;status.textContent="Autenticando…";
+  try{
+    const resposta=await chamadaAuth("token?grant_type=password",{email:$("#login-email").value.trim(),password:$("#login-senha").value});
+    guardarSessao(resposta);await carregarOuCriarDadosRemotos();mostrarAplicativo();
+    clearInterval(temporizadorPolling);temporizadorPolling=setInterval(verificarAtualizacoesRemotas,10000);
+  }catch(erro){console.error("Falha no login:",erro);status.textContent=`Não foi possível entrar: ${erro.message}`}
+  finally{botao.disabled=false}
+});
+$("#form-definir-senha").addEventListener("submit",async e=>{
+  e.preventDefault();const status=$("#login-status"),botao=$("button[type=submit]",e.currentTarget);botao.disabled=true;status.textContent="Atualizando senha…";
+  try{
+    const token=await tokenValido(),resposta=await fetch(`${SUPABASE_URL}/auth/v1/user`,{method:"PUT",headers:{"content-type":"application/json","apikey":SUPABASE_PUBLIC_KEY,Authorization:`Bearer ${token}`},body:JSON.stringify({password:$("#nova-senha").value})});
+    let corpo={};try{corpo=await resposta.json()}catch{}if(!resposta.ok)throw new Error(mensagemApi(resposta,corpo));
+    convitePendente=false;$("#form-definir-senha").hidden=true;$("#form-login").hidden=false;$("#nova-senha").value="";mostrarAplicativo();
+    clearInterval(temporizadorPolling);temporizadorPolling=setInterval(verificarAtualizacoesRemotas,10000);
+  }catch(erro){console.error("Falha ao definir senha:",erro);status.textContent=`Não foi possível definir a senha: ${erro.message}`}
+  finally{botao.disabled=false}
+});
+$("#sair").addEventListener("click",async()=>{
+  try{if(sessaoSupabase?.access_token)await fetch(`${SUPABASE_URL}/auth/v1/logout`,{method:"POST",headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:`Bearer ${sessaoSupabase.access_token}`}})}
+  catch(erro){console.warn("Não foi possível invalidar a sessão no servidor.",erro)}
+  clearInterval(temporizadorPolling);clearTimeout(temporizadorSync);limparSessao();mostrarLogin("Você saiu da conta.");
+});
+$("#exportar-dados").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify(dados,null,2)],{type:"application/json;charset=utf-8"});
+  const url=URL.createObjectURL(blob),link=document.createElement("a");
+  link.href=url;link.download="ficha-tecnica-dados.json";document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+$("#importar-dados").addEventListener("click",()=>$("#arquivo-dados").click());
+$("#arquivo-dados").addEventListener("change",async e=>{
+  const arquivo=e.target.files?.[0];e.target.value="";if(!arquivo)return;
+  try{
+    const importado=JSON.parse(await arquivo.text());
+    if(!importado||!Array.isArray(importado.insumos)||!Array.isArray(importado.fichas)||!Array.isArray(importado.custos))throw new Error("O JSON precisa conter as listas de insumos, fichas e custos.");
+    dadosImportarPendentes={...structuredClone(exemplo),...importado,insumos:importado.insumos,fichas:importado.fichas,custos:importado.custos};
+    $("#detalhe-importacao").textContent=`O arquivo "${arquivo.name}" contém ${importado.insumos.length} insumos, ${importado.fichas.length} fichas e ${importado.custos.length} custos. Confirmar substituirá os dados compartilhados atuais.`;
+    $("#confirmar-importacao").hidden=false;
+  }catch(erro){console.error("Falha ao ler o arquivo de dados:",erro);mensagem(`Não foi possível importar o arquivo: ${erro.message}`,"erro")}
+});
+$("#confirmar-importacao-btn").addEventListener("click",async()=>{
+  if(!dadosImportarPendentes)return;
+  const anterior=dados;dados=dadosImportarPendentes;dadosImportarPendentes=null;
+  $("#confirmar-importacao").hidden=true;
+  try{
+    salvar();
+    if(sessaoSupabase){await gravarDadosRemotos(carimboRemoto);$("#status-sincronizacao").textContent="Dados importados e sincronizados."}
+    renderTudo();
+  }catch(erro){
+    dados=anterior;console.error("Falha ao salvar dados importados:",erro);mensagem(`Não foi possível salvar a importação: ${erro.message}`,"erro");renderTudo();
+  }
+});
+$("#cancelar-importacao-btn").addEventListener("click",()=>{
+  dadosImportarPendentes=null;$("#confirmar-importacao").hidden=true;$("#arquivo-dados").value="";
+});
+document.addEventListener("change",e=>{
+ const t=e.target;if(!t.matches("[data-field],[data-global]"))return;
+ if(t.dataset.field==="combo"){
+   const f=acharFicha(t.closest("[data-ficha]")?.dataset.ficha);if(!f)return;
+   f.combo=t.checked;f.categoria=t.checked?"Combo":(f.categoria==="Combo"?"Lanche":f.categoria);
+   if(!f.combo)f.itens=f.itens.filter(it=>it.tipo!=="ficha");
+   salvar();renderTudo();return;
+ }
+ if(t.dataset.field==="referencia"){
+   const card=t.closest("[data-ficha]"),f=acharFicha(card?.dataset.ficha),row=t.closest("[data-item]"),it=f?.itens.find(i=>i.id===row?.dataset.item);if(!it)return;
+   if(f.combo&&t.value){const [tipo,id]=t.value.split(":");it.tipo=tipo==="f"?"ficha":"insumo";it.referencia=id;it.unidade=it.tipo==="ficha"?"un":(acharInsumo(id)?.unidade||"un")}
+   else{it.tipo="insumo";it.referencia=t.value;it.unidade=acharInsumo(t.value)?.unidade||"un"}
+   salvar();renderTudo();return;
+ }
+ if(t.dataset.field==="unidade"){gravarCampo(t,t.value);salvar();actualizarNoRebuild();return}
+ if(t.matches("select")){gravarCampo(t,t.value);salvar();if(t.dataset.field==="categoria")renderTudo();else atualizarCalculos()}
+});
+function actualizarNoRebuild(){atualizarCalculos()}
+document.addEventListener("click",e=>{
+ const tab=e.target.closest("[data-tab]");if(tab){alternarAba(tab.dataset.tab);return}
+ const b=e.target.closest("[data-action]");if(!b)return;const act=b.dataset.action,card=b.closest("[data-ficha]"),f=acharFicha(card?.dataset.ficha);
+ if(act==="novo-insumo"){dados.insumos.push({id:uid(),nome:"Novo insumo",unidade:"un",preco:0,quantidade:1});salvar();renderTudo()}
+ if(act==="novo-custo"){dados.custos.push({id:uid(),nome:"Novo custo",valor:0});salvar();renderTudo()}
+ if(act==="nova-ficha"||act==="novo-combo"){const combo=act==="novo-combo";const nf={id:uid(),nome:combo?"Novo combo":"Nova ficha",categoria:combo?"Combo":"Lanche",combo,porcoes:1,margem:"",precoAtual:0,aberta:true,itens:[]};dados.fichas.push(nf);dados.categoriaFiltro="Todas";salvar();renderTudo()}
+ if(act==="novo-item"&&f){f.itens.push({id:uid(),tipo:"insumo",referencia:"",quantidade:1,unidade:"un"});salvar();renderTudo()}
+ if(act==="toggle-ficha"&&f){f.aberta=!f.aberta;salvar();renderTudo()}
+ if(act==="copiar-ficha"&&f){const clone={...structuredClone(f),id:uid(),nome:`${f.nome} (cópia)`,precoAtual:0,aberta:true,itens:f.itens.map(it=>({...it,id:uid()}))};dados.fichas.splice(dados.fichas.indexOf(f)+1,0,clone);salvar();renderTudo()}
+ if(act==="minimizar-todas"||act==="expandir-todas"){dados.fichas.forEach(x=>x.aberta=act==="expandir-todas");salvar();renderTudo()}
+ if(act==="filtro"){dados.categoriaFiltro=b.dataset.categoria;salvar();renderFichas()}
+ if(act==="mover-item"&&f){const row=b.closest("[data-item]"),i=f.itens.findIndex(x=>x.id===row?.dataset.item),j=i+Number(b.dataset.dir);if(i>=0&&j>=0&&j<f.itens.length){[f.itens[i],f.itens[j]]=[f.itens[j],f.itens[i]];salvar();renderTudo()}}
+ if(act==="pedir-exclusao"){const tipo=b.dataset.tipo,id=b.dataset.id,key=`${tipo}-${id}`,box=b.closest(".delete-box");
+   if(b.dataset.confirm==="sim"){if(tipo==="insumo"){dados.insumos=dados.insumos.filter(x=>x.id!==id);dados.fichas.forEach(x=>x.itens=x.itens.filter(it=>!(it.tipo==="insumo"&&it.referencia===id)))}
+     if(tipo==="ficha"){dados.fichas=dados.fichas.filter(x=>x.id!==id);dados.fichas.forEach(x=>x.itens=x.itens.filter(it=>!(it.tipo==="ficha"&&it.referencia===id)))}
+     if(tipo==="item"){const ficha=dados.fichas.find(x=>x.itens.some(it=>it.id===id));if(ficha)ficha.itens=ficha.itens.filter(it=>it.id!==id)}
+     if(tipo==="custo")dados.custos=dados.custos.filter(x=>x.id!==id);salvar();renderTudo();return}
+   box.innerHTML=`<button class="btn small danger" data-action="pedir-exclusao" data-tipo="${escapeHtml(tipo)}" data-id="${escapeHtml(id)}" data-confirm="sim">Confirmar exclusão</button><button class="btn small" data-action="cancelar-exclusao" data-key="${escapeHtml(key)}">Cancelar</button>`}
+ if(act==="cancelar-exclusao"){renderTudo()}
+ if(act==="gerar-analise")gerarAnalise();
+ if(act==="baixar-relatorio")baixarRelatorio();
+});
+function markdownHtml(md){
+ const linhas=String(md||"").split(/\r?\n/);let html="",inList=false,inTable=false,tableHeader=false;
+ const inline=s=>escapeHtml(s).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\*(.+?)\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>");
+ for(const linha of linhas){const t=linha.trim();
+  if(t.startsWith("|")&&t.endsWith("|")){if(!inTable){html+="<table>";inTable=true;tableHeader=true}if(/^\|[\s:|-]+\|$/.test(t))continue;const cells=t.slice(1,-1).split("|"),tag=tableHeader?"th":"td";html+=`<tr>${cells.map(c=>`<${tag}>${inline(c.trim())}</${tag}>`).join("")}</tr>`;tableHeader=false;continue}
+  if(inTable){html+="</table>";inTable=false;tableHeader=false}
+  const h=t.match(/^(#{1,3})\s+(.+)/);if(h){if(inList){html+="</ul>";inList=false}html+=`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`;continue}
+  const li=t.match(/^[-*]\s+(.+)/);if(li){if(!inList){html+="<ul>";inList=true}html+=`<li>${inline(li[1])}</li>`;continue}
+  if(inList){html+="</ul>";inList=false}if(t)html+=`<p>${inline(t)}</p>`;
+ }
+ if(inTable)html+="</table>";if(inList)html+="</ul>";return html;
+}
+async function gerarAnalise(){
+ const out=$("#relatorio-ia"),status=$("#status-ia");if(!dados.chaveApi.trim()){status.textContent="Informe sua chave da API Anthropic para gerar o relatório.";return}
+ status.textContent="Gerando análise…";const button=$('[data-action="gerar-analise"]');button.disabled=true;
+ const request={model:MODELO_ANTHROPIC,max_tokens:3000,temperature:.2,system:"Você é consultor sênior de restaurantes e engenharia de cardápio. Analise exclusivamente os dados fornecidos. Não invente números nem presuma dados ausentes. Informe explicitamente quando faturamento ou custos estiverem zerados. Responda em português do Brasil, em Markdown, com as seções obrigatórias: Resumo executivo (nota de 0 a 10), Diagnóstico do CMV, Diagnóstico do CMO, Precificação por produto (tabela com ação recomendada), Engenharia de cardápio e combos, Redução de custos, Plano de ação para 7/30/90 dias, Dados faltantes.",messages:[{role:"user",content:`Analise estes dados da hamburgueria. Os valores numéricos estão em reais, exceto percentuais. Não complete lacunas com suposições:\n${JSON.stringify(dadosAnalise())}`} ]};
+ try{
+   const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":dados.chaveApi,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify(request)});
+   if(res.status===401)throw new Error("Chave inválida ou não autorizada (401). Confira a chave da API.");
+   if(res.status===429)throw new Error("Limite de solicitações atingido (429). Aguarde um pouco e tente novamente.");
+   if(!res.ok){let detail="";try{detail=(await res.json()).error?.message||""}catch{}throw new Error(`A API Anthropic respondeu com erro ${res.status}${detail?`: ${detail}`:""}.`)}
+   const json=await res.json(),texto=(json.content||[]).filter(x=>x.type==="text").map(x=>x.text).join("\n").trim();if(!texto)throw new Error("A resposta da API não continha texto de análise.");
+   dados.ultimaAnalise=texto;salvar();out.innerHTML=markdownHtml(texto);status.textContent="Análise salva neste navegador.";
+ }catch(err){console.error("Falha ao gerar análise:",err);status.textContent=err instanceof TypeError?"Falha de rede ou bloqueio de conexão. Verifique a internet e tente novamente.":err.message}
+ finally{button.disabled=false}
+}
+function baixarRelatorio(){
+ const graficos=$("#panel-analise .card")?.innerHTML||"";
+ const rel=markdownHtml(dados.ultimaAnalise||"Nenhuma análise de IA foi gerada ainda.");
+ const html=`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Relatório — Ficha Técnica &amp; Precificação</title><style>:root{font:15px/1.6 system-ui,sans-serif;color:#292524;background:#fff}body{max-width:1000px;margin:30px auto;padding:0 18px}h1,h2,h3{color:#9a3412}table{width:100%;border-collapse:collapse;margin:12px 0}td,th{border:1px solid #ddd;padding:7px;text-align:left}.stat-grid{display:flex;gap:10px;flex-wrap:wrap}.stat{background:#fff7ed;border-radius:8px;padding:12px;min-width:130px}.stat span{display:block;color:#666;font-size:12px}.bar-row{display:grid;grid-template-columns:160px 1fr 90px;gap:10px;align-items:center;margin:8px 0}.bar-track{height:13px;background:#eee;border-radius:8px}.bar{height:100%;background:#c2410c;border-radius:8px}.goodbar{background:#15803d}.badbar{background:#b91c1c}.muted{color:#666}.footer-note{color:#666}@media print{body{margin:0;max-width:none}}</style><h1>Ficha Técnica &amp; Precificação — Relatório</h1><p>Dados do negócio: ${new Date().toLocaleString("pt-BR")}</p>${graficos}<h2>Relatório com IA</h2><div class="report">${rel}</div></html>`;
+ const blob=new Blob([html],{type:"text/html;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="relatorio-hamburgueria.html";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$$(".tab").forEach(b=>b.addEventListener("click",()=>alternarAba(b.dataset.tab)));
+iniciarAplicativo();
+</script>
+</body>
+</html>
