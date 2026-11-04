@@ -18,6 +18,11 @@
     .pos-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(330px,.9fr);gap:16px;align-items:start}.pos-products,.pos-order{min-width:0}.pos-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:8px 0 14px}.pos-toolbar h2{margin:0}.pos-search{max-width:320px}.pos-product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;max-height:calc(100vh - 270px);overflow:auto;padding:2px}.pos-product{display:flex;flex-direction:column;min-width:0;padding:10px;border:1px solid var(--border);border-radius:14px;background:var(--surface);text-align:left;color:var(--text);box-shadow:var(--shadow)}.pos-product:hover{border-color:var(--accent);transform:translateY(-1px)}.pos-product-art{display:grid;place-items:center;min-height:100px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:2rem;font-weight:800}.pos-product-art span{border:2px solid currentColor;border-radius:50%;padding:10px 15px}.pos-product-name{margin:9px 0 2px;font-weight:700;line-height:1.25}.pos-product-category{font-size:.82rem;color:var(--muted)}.pos-product-price{margin-top:8px;font-weight:750;color:var(--accent)}.pos-order{position:sticky;top:12px}.pos-order-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.pos-order-head h2{margin:0}.pos-cart{max-height:34vh;overflow:auto;margin:12px 0}.pos-cart-line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)}.pos-line-name{font-weight:650}.pos-line-controls{display:flex;align-items:center;gap:6px;margin-top:6px}.pos-line-controls button{min-width:30px;padding:3px 7px}.pos-line-total{font-weight:700;white-space:nowrap}.pos-totals{background:var(--accent-soft);border-radius:12px;padding:12px;margin:12px 0}.pos-total-row{display:flex;justify-content:space-between;gap:12px;padding:4px 0}.pos-total-row.final{border-top:1px solid var(--border);margin-top:5px;padding-top:9px;font-weight:800;font-size:1.12rem}.pos-payment-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.pos-payment-options button{padding:9px 6px}.pos-payment-options button.selected{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}.pos-recent{max-height:180px;overflow:auto}.pos-recent-row{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:.86rem}.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}.menu-product{display:grid;gap:10px}.menu-product-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.menu-product-head h3{margin:0}.switch-line{display:flex;align-items:center;gap:9px;font-size:.88rem;font-weight:650}.switch{appearance:none;width:42px;height:24px;border-radius:99px;background:var(--border);position:relative;cursor:pointer;transition:background .15s}.switch:before{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:var(--surface);box-shadow:0 1px 3px #0004;transition:transform .15s}.switch:checked{background:var(--accent)}.switch:checked:before{transform:translateX(18px)}.switch:disabled{opacity:.5;cursor:not-allowed}.menu-product .field{max-width:180px}@media(max-width:800px){.pos-layout{grid-template-columns:1fr}.pos-order{position:static}.pos-product-grid{max-height:none;grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}@media(max-width:480px){.pos-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pos-product-art{min-height:80px}}
     .pos-product-art img{width:100%;height:100px;object-fit:cover}.pos-line-controls{flex-wrap:wrap}.menu-product-photo{height:110px;width:100%;border-radius:10px;background:var(--accent-soft);display:grid;place-items:center;overflow:hidden;color:var(--accent);font-size:2rem;font-weight:800}.menu-product-photo img{width:100%;height:100%;object-fit:cover}@media(max-width:480px){.menu-product-photo{height:90px}}
   </style>
+  <style>
+    .pos-comanda-box{margin-top:16px;padding-top:12px;border-top:1px dashed var(--border);display:grid;gap:10px}.pos-comanda-box h3{margin:0}.pos-comanda-box .footer-note{margin:0}
+    .comanda-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start}.comanda-card{margin:0;display:grid;gap:10px;min-width:0}.comanda-card h3{margin:0 0 2px}.comanda-card .pos-cart{margin:0;max-height:260px}.comanda-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.comanda-total{font-size:1.2rem;color:var(--accent);white-space:nowrap}
+    @media(max-width:480px){.comanda-grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
   <header>
@@ -33,6 +38,7 @@
     </div>
     <nav class="tabs" aria-label="Seções" hidden>
       <button class="tab" data-tab="pdv">1. PDV</button>
+      <button class="tab" data-tab="comanda">1.1. Comanda</button>
       <button class="tab" data-tab="cardapio">2. Cardápio</button>
       <button class="tab" data-tab="producao">3. Produção</button>
       <button class="tab active" data-tab="ficha-tecnica">4. Ficha Técnica</button>
@@ -58,6 +64,7 @@
     </section>
     <div id="app-shell" hidden>
       <section class="module-panel" id="panel-pdv"></section>
+      <section class="module-panel" id="panel-comanda"></section>
       <section class="module-panel" id="panel-cardapio"></section>
       <section class="module-panel" id="panel-producao"><div class="card"><h2>Produção</h2><p class="muted">Módulo de produção. Esta área está preparada para acompanhar preparo e pedidos da cozinha.</p></div></section>
       <section class="module-panel active" id="panel-ficha-tecnica">
@@ -116,6 +123,7 @@ const TABELA_EMPRESAS = "companies";
 const CATEGORIAS_PADRAO = ["Lanche", "Bebida", "Porções", "Almoço", "Sobremesa", "Combo"];
 const ABAS = [
   ["pdv", "1. PDV"],
+  ["comanda", "1.1. Comanda"],
   ["cardapio", "2. Cardápio"],
   ["producao", "3. Produção"],
   ["ficha-tecnica", "4. Ficha Técnica"],
@@ -128,7 +136,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const exemplo = {
   insumos:[],fichas:[],custos:[],faturamento:0,imposto:0,taxas:0,margemPadrao:0,
   chaveApi:"",categorias:[...CATEGORIAS_PADRAO],categoriaCombo:"Combo",categoriaFiltro:"Todas",
-  pedidoPdv:[],vendasPdv:[],ultimaAnalise:"",versaoImportacao:VERSAO_IMPORTACAO
+  pedidoPdv:[],vendasPdv:[],comandas:[],ultimaAnalise:"",versaoImportacao:VERSAO_IMPORTACAO
 };
 let dados = carregarDados();
 let abaAtiva = "ficha-tecnica";
@@ -165,13 +173,28 @@ function carregarDados(){
     return normalizarDados(obj);
   }catch(erro){console.warn("Não foi possível carregar os dados salvos; usando os dados de exemplo.",erro);return structuredClone(exemplo)}
 }
+function chaveComanda(texto){return String(texto||"").trim().replace(/\s+/g," ").toLocaleLowerCase("pt-BR")}
+function totalComanda(c){return c.itens.reduce((t,i)=>t+n(i.precoUnitario)*n(i.quantidade),0)}
+function normalizarComandas(lista){
+  if(!Array.isArray(lista))return [];
+  return lista.filter(c=>c&&String(c.identificador||"").trim()).map(c=>({
+    id:String(c.id||uid()),
+    identificador:String(c.identificador).trim().replace(/\s+/g," ").slice(0,40),
+    criadaEm:c.criadaEm||new Date().toISOString(),
+    itens:(Array.isArray(c.itens)?c.itens:[]).filter(i=>i&&n(i.quantidade)>0).map(i=>({
+      linhaId:String(i.linhaId||uid()),fichaId:i.fichaId,nome:String(i.nome||"Produto"),
+      precoUnitario:Math.max(0,n(i.precoUnitario)),quantidade:Math.max(1,Math.floor(n(i.quantidade)))
+    }))
+  }));
+}
 function normalizarDados(obj){
   const normalizado={...structuredClone(exemplo),...obj,
     insumos:Array.isArray(obj.insumos)?obj.insumos:structuredClone(exemplo.insumos),
     fichas:Array.isArray(obj.fichas)?obj.fichas:structuredClone(exemplo.fichas),
     custos:Array.isArray(obj.custos)?obj.custos:structuredClone(exemplo.custos),
     pedidoPdv:Array.isArray(obj.pedidoPdv)?obj.pedidoPdv:[],
-    vendasPdv:Array.isArray(obj.vendasPdv)?obj.vendasPdv:[]};
+    vendasPdv:Array.isArray(obj.vendasPdv)?obj.vendasPdv:[],
+    comandas:normalizarComandas(obj.comandas)};
   normalizado.fichas.forEach(f=>{f.publicadoPdv=f.publicadoPdv===true});
   const fichasPorId=new Map(normalizado.fichas.map(f=>[f.id,f]));
   normalizado.pedidoPdv=normalizado.pedidoPdv.filter(item=>fichasPorId.has(item.fichaId)&&n(item.quantidade)>0).map(item=>({
@@ -255,7 +278,7 @@ async function abrirEmpresa(id){
   const empresa=empresasDisponiveis.find(item=>item.id===id);
   if(!empresa)throw new Error("A empresa selecionada não está disponível para esta conta.");
   clearInterval(temporizadorPolling);clearTimeout(temporizadorSync);
-  categoriasRascunho=null;erroCategorias="";statusPdv="";remocaoPdvPendente="";pagamentoPdv="Pix";
+  categoriasRascunho=null;erroCategorias="";statusPdv="";remocaoPdvPendente="";pagamentoPdv="Pix";comandaPdv="";statusComanda="";confirmacaoComanda="";pagamentoComanda={};
   empresaSelecionada=empresa;sincronizacaoPendente=false;sincronizacaoEmCurso=false;conflitoSincronizacao=false;carimboRemoto=null;
   try{
     await carregarOuCriarDadosRemotos();
@@ -371,7 +394,7 @@ async function carregarLoginsAdministrativos(){
         <h4>Login: ${escapeHtml(usuario.username)}</h4>
         <div class="field"><label>Nova senha (opcional; mínimo 8 caracteres)</label><input type="password" data-user-password autocomplete="new-password" minlength="8" placeholder="Deixe em branco para manter"></div>
         <fieldset><legend>Empresas liberadas</legend><div class="check-list">${empresasDisponiveis.map(empresa=>`<label class="check-option"><input type="checkbox" data-user-company value="${escapeHtml(empresa.id)}" ${empresasUsuario.has(empresa.id)?"checked":""}> ${escapeHtml(empresa.name)}</label>`).join("")}</div></fieldset>
-        <fieldset><legend>Abas ocultas para este login</legend><div class="check-list">${ABAS.map(([id,nome])=>`<label class="check-option"><input type="checkbox" data-user-tab value="${id}" ${abasUsuario.has(id)?"checked":""}> ${escapeHtml(nome.replace(/^\d+\. /,""))}</label>`).join("")}</div></fieldset>
+        <fieldset><legend>Abas ocultas para este login</legend><div class="check-list">${ABAS.map(([id,nome])=>`<label class="check-option"><input type="checkbox" data-user-tab value="${id}" ${abasUsuario.has(id)?"checked":""}> ${escapeHtml(nome.replace(/^[\d.]+\s+/,""))}</label>`).join("")}</div></fieldset>
         <button class="btn primary" type="submit">Salvar alterações</button>
       </form></article>`;
     }).join(""):'<p class="muted">Nenhum login de usuário cadastrado.</p>';
@@ -478,6 +501,28 @@ function rotuloPreco(ficha){return deducoes(ficha)>=100?"Deduções ≥ 100%":"�
 let statusPdv="";
 let pagamentoPdv="Pix";
 let remocaoPdvPendente="";
+let comandaPdv="";
+let statusComanda="";
+let confirmacaoComanda="";
+let pagamentoComanda={};
+function acharComanda(id){return dados.comandas.find(c=>c.id===id)}
+function renderComanda(){
+ const painel=$("#panel-comanda");if(!painel)return;
+ const lista=[...dados.comandas].sort((a,b)=>String(a.criadaEm).localeCompare(String(b.criadaEm)));
+ const totalAberto=lista.reduce((t,c)=>t+totalComanda(c),0);
+ const cards=lista.map(c=>{
+  const id=escapeHtml(c.id),total=totalComanda(c),pag=pagamentoComanda[c.id]||"Pix";
+  const qtd=c.itens.reduce((t,i)=>t+n(i.quantidade),0),data=new Date(c.criadaEm);
+  const hora=Number.isNaN(data.getTime())?"":data.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  const linhas=c.itens.map(item=>{
+   const linha=escapeHtml(item.linhaId),chave=`item:${item.linhaId}`;
+   return `<div class="pos-cart-line"><div><div class="pos-line-name">${escapeHtml(item.nome)}</div><div class="muted">${moeda(n(item.precoUnitario))} cada</div><div class="pos-line-controls"><button class="btn small" data-action="comanda-diminuir" data-comanda="${id}" data-linha="${linha}" aria-label="Diminuir quantidade">−</button><span>${n(item.quantidade)}</span><button class="btn small" data-action="comanda-aumentar" data-comanda="${id}" data-linha="${linha}" aria-label="Aumentar quantidade">+</button>${confirmacaoComanda===chave?`<button class="btn small danger" data-action="comanda-confirmar-item" data-comanda="${id}" data-linha="${linha}">Confirmar</button><button class="btn small" data-action="comanda-cancelar-confirmacao">Cancelar</button>`:`<button class="btn small danger" data-action="comanda-remover-item" data-comanda="${id}" data-linha="${linha}">Remover</button>`}</div></div><div class="pos-line-total">${moeda(n(item.precoUnitario)*n(item.quantidade))}</div></div>`;
+  }).join("");
+  const cancelando=confirmacaoComanda===`cancelar:${c.id}`;
+  return `<article class="card comanda-card" data-comanda-card data-search="${escapeHtml(c.identificador.toLocaleLowerCase("pt-BR"))}"><div class="comanda-head"><div><h3>Comanda ${escapeHtml(c.identificador)}</h3><span class="muted">${hora?`Aberta às ${hora} · `:""}${qtd} ${qtd===1?"item":"itens"}</span></div><strong class="comanda-total">${moeda(total)}</strong></div><div class="pos-cart">${linhas||'<div class="empty">Comanda sem itens.</div>'}</div><div class="actions"><button class="btn small" data-action="comanda-adicionar" data-comanda="${id}">Adicionar itens</button>${cancelando?`<button class="btn small danger" data-action="comanda-confirmar-cancelamento" data-comanda="${id}">Confirmar cancelamento</button><button class="btn small" data-action="comanda-cancelar-confirmacao">Voltar</button>`:`<button class="btn small danger" data-action="comanda-cancelar" data-comanda="${id}">Cancelar comanda</button>`}</div><h3>Forma de pagamento</h3><div class="pos-payment-options">${["Dinheiro","Pix","Crédito","Débito"].map(m=>`<button class="btn ${pag===m?"selected":""}" type="button" data-action="comanda-pagamento" data-comanda="${id}" data-method="${m}">${m}</button>`).join("")}</div><button class="btn primary" style="width:100%" data-action="comanda-fechar" data-comanda="${id}" ${c.itens.length?"":"disabled"}>Fechar e registrar venda · ${moeda(total)}</button></article>`;
+ }).join("");
+ painel.innerHTML=`<div class="pos-toolbar"><div><h2>Comandas abertas</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Atendimento")} · ${lista.length} ${lista.length===1?"comanda":"comandas"} · ${moeda(totalAberto)} em aberto</div></div><label class="field pos-search"><span>Buscar comanda</span><input type="search" data-comanda-search placeholder="Nome ou número"></label></div>${statusComanda?`<div class="notice" role="status">${escapeHtml(statusComanda)}</div>`:""}${lista.length?`<div class="comanda-grid">${cards}</div>`:'<div class="card empty">Nenhuma comanda aberta. No PDV, monte o pedido, digite o nome ou número da comanda e toque em “Enviar para comanda”.</div>'}`;
+}
 function totalPedidoPdv(){return dados.pedidoPdv.reduce((total,item)=>total+n(item.precoUnitario)*n(item.quantidade),0)}
 function renderCardapio(){
  const painel=$("#panel-cardapio");
@@ -494,10 +539,10 @@ async function comprimirImagemCardapio(arquivo){
 function renderPdv(){
  const painel=$("#panel-pdv"),disponiveis=dados.fichas.filter(f=>f.publicadoPdv&&n(f.precoAtual)>0);
  const linhas=dados.pedidoPdv.map(item=>`<div class="pos-cart-line"><div><div class="pos-line-name">${escapeHtml(item.nome)}</div><div class="muted">${moeda(n(item.precoUnitario))} cada</div><div class="pos-line-controls"><button class="btn small" data-action="pdv-diminuir" data-id="${escapeHtml(item.fichaId)}" aria-label="Diminuir quantidade">−</button><span>${n(item.quantidade)}</span><button class="btn small" data-action="pdv-aumentar" data-id="${escapeHtml(item.fichaId)}" aria-label="Aumentar quantidade">+</button>${remocaoPdvPendente===item.fichaId?`<button class="btn small danger" data-action="pdv-confirmar-remocao" data-id="${escapeHtml(item.fichaId)}">Confirmar</button><button class="btn small" data-action="pdv-cancelar-remocao">Cancelar</button>`:`<button class="btn small danger" data-action="pdv-remover" data-id="${escapeHtml(item.fichaId)}">Remover</button>`}</div></div><div class="pos-line-total">${moeda(n(item.precoUnitario)*n(item.quantidade))}</div></div>`).join("");
- const recentes=dados.vendasPdv.slice(-5).reverse().map(v=>`<div class="pos-recent-row"><span>Venda #${escapeHtml(v.numero)} · ${escapeHtml(v.formaPagamento)}</span><strong>${moeda(n(v.total))}</strong></div>`).join("");
+ const recentes=dados.vendasPdv.slice(-5).reverse().map(v=>`<div class="pos-recent-row"><span>Venda #${escapeHtml(v.numero)}${v.comanda?` · Comanda ${escapeHtml(v.comanda)}`:""} · ${escapeHtml(v.formaPagamento)}</span><strong>${moeda(n(v.total))}</strong></div>`).join("");
  const numero=String(dados.vendasPdv.length+1).padStart(6,"0");
  const limpezaPendente=remocaoPdvPendente==="__limpar__";
- painel.innerHTML=`<div class="pos-toolbar"><div><h2>PDV</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Atendimento")}</div></div><label class="field pos-search"><span>Buscar no cardápio</span><input type="search" data-pdv-search placeholder="Digite o nome do produto"></label></div><div class="pos-layout"><section class="pos-products" aria-label="Produtos disponíveis">${disponiveis.length?`<div class="pos-product-grid">${disponiveis.map(f=>`<button class="pos-product" type="button" data-action="pdv-adicionar" data-id="${escapeHtml(f.id)}" data-search="${escapeHtml(`${f.nome} ${f.categoria}`.toLocaleLowerCase("pt-BR"))}"><span class="pos-product-art">${f.imagemCardapio?`<img src="${escapeHtml(f.imagemCardapio)}" alt="">`:`<span>${escapeHtml(String(f.nome||"?").trim().slice(0,1).toLocaleUpperCase("pt-BR"))}</span>`}</span><span class="pos-product-name">${escapeHtml(f.nome||"Produto sem nome")}</span><span class="pos-product-category">${escapeHtml(f.categoria)}</span><span class="pos-product-price">${moeda(n(f.precoAtual))}</span></button>`).join("")}</div>`:'<div class="card empty">Nenhum produto está visível no PDV. Acesse Cardápio e ative o seletor de um produto com preço cadastrado.</div>'}</section><aside class="card pos-order"><div class="pos-order-head"><h2>Pedido #${numero}</h2>${limpezaPendente?'<span class="actions"><button class="btn small danger" data-action="pdv-confirmar-limpeza">Confirmar</button><button class="btn small" data-action="pdv-cancelar-remocao">Cancelar</button></span>':`<button class="btn small" data-action="pdv-limpar" ${dados.pedidoPdv.length?"":"disabled"}>Limpar pedido</button>`}</div><div class="pos-cart">${linhas||'<div class="empty">Adicione produtos do cardápio ao pedido.</div>'}</div><div class="pos-totals"><div class="pos-total-row"><span>Subtotal</span><strong>${moeda(totalPedidoPdv())}</strong></div><div class="pos-total-row final"><span>Total</span><strong>${moeda(totalPedidoPdv())}</strong></div></div><h3>Forma de pagamento</h3><div class="pos-payment-options">${["Dinheiro","Pix","Crédito","Débito"].map(m=>`<button class="btn ${pagamentoPdv===m?"selected":""}" type="button" data-action="pdv-pagamento" data-method="${m}">${m}</button>`).join("")}</div><button class="btn primary" style="width:100%" data-action="pdv-finalizar" ${dados.pedidoPdv.length?"":"disabled"}>Registrar venda · ${moeda(totalPedidoPdv())}</button><p class="footer-note">O registro não processa pagamentos; confirme o recebimento no meio escolhido.</p>${statusPdv?`<div class="notice" role="status">${escapeHtml(statusPdv)}</div>`:""}<h3>Vendas recentes</h3><div class="pos-recent">${recentes||'<span class="muted">Nenhuma venda registrada.</span>'}</div></aside></div>`;
+ painel.innerHTML=`<div class="pos-toolbar"><div><h2>PDV</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Atendimento")}</div></div><label class="field pos-search"><span>Buscar no cardápio</span><input type="search" data-pdv-search placeholder="Digite o nome do produto"></label></div><div class="pos-layout"><section class="pos-products" aria-label="Produtos disponíveis">${disponiveis.length?`<div class="pos-product-grid">${disponiveis.map(f=>`<button class="pos-product" type="button" data-action="pdv-adicionar" data-id="${escapeHtml(f.id)}" data-search="${escapeHtml(`${f.nome} ${f.categoria}`.toLocaleLowerCase("pt-BR"))}"><span class="pos-product-art">${f.imagemCardapio?`<img src="${escapeHtml(f.imagemCardapio)}" alt="">`:`<span>${escapeHtml(String(f.nome||"?").trim().slice(0,1).toLocaleUpperCase("pt-BR"))}</span>`}</span><span class="pos-product-name">${escapeHtml(f.nome||"Produto sem nome")}</span><span class="pos-product-category">${escapeHtml(f.categoria)}</span><span class="pos-product-price">${moeda(n(f.precoAtual))}</span></button>`).join("")}</div>`:'<div class="card empty">Nenhum produto está visível no PDV. Acesse Cardápio e ative o seletor de um produto com preço cadastrado.</div>'}</section><aside class="card pos-order"><div class="pos-order-head"><h2>Pedido #${numero}</h2>${limpezaPendente?'<span class="actions"><button class="btn small danger" data-action="pdv-confirmar-limpeza">Confirmar</button><button class="btn small" data-action="pdv-cancelar-remocao">Cancelar</button></span>':`<button class="btn small" data-action="pdv-limpar" ${dados.pedidoPdv.length?"":"disabled"}>Limpar pedido</button>`}</div><div class="pos-cart">${linhas||'<div class="empty">Adicione produtos do cardápio ao pedido.</div>'}</div><div class="pos-totals"><div class="pos-total-row"><span>Subtotal</span><strong>${moeda(totalPedidoPdv())}</strong></div><div class="pos-total-row final"><span>Total</span><strong>${moeda(totalPedidoPdv())}</strong></div></div><h3>Forma de pagamento</h3><div class="pos-payment-options">${["Dinheiro","Pix","Crédito","Débito"].map(m=>`<button class="btn ${pagamentoPdv===m?"selected":""}" type="button" data-action="pdv-pagamento" data-method="${m}">${m}</button>`).join("")}</div><button class="btn primary" style="width:100%" data-action="pdv-finalizar" ${dados.pedidoPdv.length?"":"disabled"}>Registrar venda · ${moeda(totalPedidoPdv())}</button><p class="footer-note">O registro não processa pagamentos; confirme o recebimento no meio escolhido.</p><div class="pos-comanda-box"><h3>Comanda</h3><label class="field"><span>Nome ou número da comanda</span><input type="text" data-comanda-input list="comandas-abertas" maxlength="40" autocomplete="off" placeholder="Ex.: Mesa 4, João, 12" value="${escapeHtml(comandaPdv)}"></label><datalist id="comandas-abertas">${dados.comandas.map(c=>`<option value="${escapeHtml(c.identificador)}"></option>`).join("")}</datalist><button class="btn" style="width:100%" type="button" data-action="pdv-enviar-comanda" ${dados.pedidoPdv.length?"":"disabled"}>Enviar para comanda</button><p class="footer-note">Se a comanda já estiver aberta, os itens são somados a ela. O pagamento é feito depois, na aba 1.1. Comanda.</p></div>${statusPdv?`<div class="notice" role="status">${escapeHtml(statusPdv)}</div>`:""}<h3>Vendas recentes</h3><div class="pos-recent">${recentes||'<span class="muted">Nenhuma venda registrada.</span>'}</div></aside></div>`;
 }
 function renderTudo(){
  const renderers={insumos:renderInsumos,fichas:renderFichas,cmo:renderCmo,precificacao:renderPrecificacao,analise:renderAnalise};
@@ -506,6 +551,7 @@ function renderTudo(){
    if(abaPermitida("ficha-tecnica"))render();else painel.innerHTML="";
  }
    if(abaPermitida("pdv"))renderPdv();else $("#panel-pdv").innerHTML="";
+   if(abaPermitida("comanda"))renderComanda();else $("#panel-comanda").innerHTML="";
    if(abaPermitida("cardapio"))renderCardapio();else $("#panel-cardapio").innerHTML="";
  alternarAba(abaAtiva);
 }
@@ -515,6 +561,7 @@ function alternarAba(nome){
  $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===nome));
  $$(".module-panel").forEach(p=>p.classList.toggle("active",p.id===`panel-${nome}`));
  if(nome==="pdv")renderPdv();
+ if(nome==="comanda")renderComanda();
  if(nome==="cardapio")renderCardapio();
  if(nome==="ficha-tecnica")alternarSubAba(subAbaAtiva);
 }
@@ -649,8 +696,17 @@ function gravarCampo(target,value){
  else if(row.dataset.ficha){const f=acharFicha(row.dataset.ficha);if(f)f[target.dataset.field]=target.dataset.field==="nome"||target.dataset.field==="categoria"||target.dataset.field==="margem"?value:target.dataset.field==="combo"?target.checked:n(value)}
  else if(row.dataset.item){const f=dados.fichas.find(x=>x.itens.some(i=>i.id===row.dataset.item)),it=f?.itens.find(i=>i.id===row.dataset.item);if(it)it[target.dataset.field]=target.dataset.field==="quantidade"?n(value):value}
 }
+document.addEventListener("keydown",e=>{
+ if(e.key==="Enter"&&e.target.matches?.("[data-comanda-input]")){e.preventDefault();const botao=$('[data-action="pdv-enviar-comanda"]');if(botao&&!botao.disabled)botao.click()}
+});
 document.addEventListener("input",e=>{
  const t=e.target;
+ if(t.matches("[data-comanda-input]")){comandaPdv=t.value;return}
+ if(t.matches("[data-comanda-search]")){
+   const termo=t.value.trim().toLocaleLowerCase("pt-BR");
+   $$("[data-comanda-card]").forEach(card=>{card.hidden=!card.dataset.search.includes(termo)});
+   return;
+ }
  if(t.matches("[data-pdv-search]")){
    const termo=t.value.trim().toLocaleLowerCase("pt-BR");
    $$(".pos-product").forEach(card=>{card.hidden=!card.dataset.search.includes(termo)});
@@ -689,7 +745,7 @@ async function sairDaConta(texto){
   try{if(sessaoSupabase?.access_token)await chamadaRpc("app_logout",{p_token:sessaoSupabase.access_token})}
   catch(erro){console.warn("Não foi possível invalidar a sessão no banco.",erro)}
   clearInterval(temporizadorPolling);clearTimeout(temporizadorSync);
-  empresaSelecionada=null;empresasDisponiveis=[];ehAdmin=false;abasOcultas=[];statusPdv="";remocaoPdvPendente="";limparSessao();mostrarLogin(texto);
+  empresaSelecionada=null;empresasDisponiveis=[];ehAdmin=false;abasOcultas=[];statusPdv="";remocaoPdvPendente="";comandaPdv="";statusComanda="";confirmacaoComanda="";pagamentoComanda={};limparSessao();mostrarLogin(texto);
 }
 $("#trocar-empresa").addEventListener("click",async()=>{
   if(sincronizacaoPendente){
@@ -736,7 +792,7 @@ $("#admin-user-list").addEventListener("submit",async e=>{
   const companyIds=$$("[data-user-company]:checked",form).map(input=>input.value);
   const hiddenTabs=$$("[data-user-tab]:checked",form).map(input=>input.value);
   if(!companyIds.length){status.textContent="Cada login precisa ter pelo menos uma empresa.";return}
-  if(["pdv","cardapio","producao","ficha-tecnica"].every(nome=>hiddenTabs.includes(nome))){status.textContent="Deixe pelo menos uma aba de trabalho visível para este login.";return}
+  if(["pdv","comanda","cardapio","producao","ficha-tecnica"].every(nome=>hiddenTabs.includes(nome))){status.textContent="Deixe pelo menos uma aba de trabalho visível para este login.";return}
   botao.disabled=true;status.textContent="Salvando alterações…";
   try{
     const resultado=await chamadaRpc("app_admin_update_user",{
@@ -850,6 +906,49 @@ document.addEventListener("click",e=>{
  if(act==="pdv-limpar"){remocaoPdvPendente="__limpar__";renderPdv();return}
  if(act==="pdv-confirmar-limpeza"){dados.pedidoPdv=[];remocaoPdvPendente="";statusPdv="Pedido limpo.";salvar();renderPdv();return}
  if(act==="pdv-pagamento"){pagamentoPdv=b.dataset.method;renderPdv();return}
+ if(act==="pdv-enviar-comanda"){
+   if(!dados.pedidoPdv.length)return;
+   const rotulo=comandaPdv.trim().replace(/\s+/g," ");
+   if(!rotulo){statusPdv="Informe o nome ou o número da comanda.";renderPdv();return}
+   let comanda=dados.comandas.find(c=>chaveComanda(c.identificador)===chaveComanda(rotulo));
+   const existente=Boolean(comanda);
+   if(!comanda){comanda={id:uid(),identificador:rotulo,criadaEm:new Date().toISOString(),itens:[]};dados.comandas.push(comanda)}
+   for(const item of dados.pedidoPdv){
+     const igual=comanda.itens.find(x=>x.fichaId===item.fichaId&&n(x.precoUnitario)===n(item.precoUnitario));
+     if(igual)igual.quantidade+=item.quantidade;
+     else comanda.itens.push({linhaId:uid(),fichaId:item.fichaId,nome:item.nome,precoUnitario:item.precoUnitario,quantidade:item.quantidade});
+   }
+   dados.pedidoPdv=[];comandaPdv="";remocaoPdvPendente="";
+   statusPdv=existente?`Itens adicionados à comanda ${comanda.identificador}.`:`Comanda ${comanda.identificador} criada com o pedido.`;
+   salvar();renderPdv();if(abaPermitida("comanda"))renderComanda();return;
+ }
+ if(act&&act.startsWith("comanda-")){
+   const c=acharComanda(b.dataset.comanda);
+   if(act==="comanda-cancelar-confirmacao"){confirmacaoComanda="";renderComanda();return}
+   if(act==="comanda-pagamento"&&c){pagamentoComanda[c.id]=b.dataset.method;renderComanda();return}
+   if(act==="comanda-adicionar"&&c){comandaPdv=c.identificador;statusPdv=`Adicionando itens à comanda ${c.identificador}. Escolha os produtos e toque em “Enviar para comanda”.`;alternarAba("pdv");return}
+   if((act==="comanda-aumentar"||act==="comanda-diminuir")&&c){
+     const item=c.itens.find(x=>x.linhaId===b.dataset.linha);
+     if(item){item.quantidade=Math.max(1,item.quantidade+(act==="comanda-aumentar"?1:-1));statusComanda="";salvar();renderComanda()}
+     return;
+   }
+   if(act==="comanda-remover-item"&&c){confirmacaoComanda=`item:${b.dataset.linha}`;renderComanda();return}
+   if(act==="comanda-confirmar-item"&&c){c.itens=c.itens.filter(x=>x.linhaId!==b.dataset.linha);confirmacaoComanda="";salvar();renderComanda();return}
+   if(act==="comanda-cancelar"&&c){confirmacaoComanda=`cancelar:${c.id}`;renderComanda();return}
+   if(act==="comanda-confirmar-cancelamento"&&c){
+     dados.comandas=dados.comandas.filter(x=>x.id!==c.id);delete pagamentoComanda[c.id];confirmacaoComanda="";
+     statusComanda=`Comanda ${c.identificador} cancelada.`;salvar();renderComanda();return;
+   }
+   if(act==="comanda-fechar"&&c){
+     if(!c.itens.length)return;
+     const total=totalComanda(c);
+     const venda={id:uid(),numero:String(dados.vendasPdv.length+1).padStart(6,"0"),dataHora:new Date().toISOString(),empresa:empresaSelecionada?.name||"Dados locais",formaPagamento:pagamentoComanda[c.id]||"Pix",subtotal:total,total,comanda:c.identificador,itens:c.itens.map(({fichaId,nome,precoUnitario,quantidade})=>({fichaId,nome,precoUnitario,quantidade}))};
+     dados.vendasPdv.push(venda);dados.comandas=dados.comandas.filter(x=>x.id!==c.id);delete pagamentoComanda[c.id];confirmacaoComanda="";
+     statusComanda=`Comanda ${c.identificador} fechada: venda #${venda.numero} registrada. Confira o recebimento do pagamento.`;
+     salvar();renderComanda();if(abaPermitida("pdv"))renderPdv();return;
+   }
+   return;
+ }
  if(act==="pdv-finalizar"){
    if(!dados.pedidoPdv.length)return;
    const venda={id:uid(),numero:String(dados.vendasPdv.length+1).padStart(6,"0"),dataHora:new Date().toISOString(),empresa:empresaSelecionada?.name||"Dados locais",formaPagamento:pagamentoPdv,subtotal:totalPedidoPdv(),total:totalPedidoPdv(),itens:dados.pedidoPdv.map(item=>({...item}))};
