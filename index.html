@@ -38,9 +38,9 @@
   <main>
     <section id="login-screen" class="card" hidden>
       <h2>Acesso ao aplicativo</h2>
-      <p class="muted">Entre com o e-mail convidado para acessar os dados compartilhados da hamburgueria.</p>
+      <p class="muted">Entre com o login e a senha fornecidos pelo administrador. Novos acessos são criados somente pelo administrador.</p>
       <form id="form-login" class="grid">
-        <div class="field"><label for="login-email">E-mail</label><input id="login-email" type="email" autocomplete="username" required></div>
+        <div class="field"><label for="login-usuario">Login</label><input id="login-usuario" type="text" autocomplete="username" required></div>
         <div class="field"><label for="login-senha">Senha</label><input id="login-senha" type="password" autocomplete="current-password" required></div>
         <button class="btn primary" type="submit">Entrar</button>
       </form>
@@ -74,14 +74,15 @@
           </div>
         </div>
         <div id="admin-access-card" class="card" hidden>
-          <h3>Acessos de usuários</h3>
-          <p>Convide um e-mail para a empresa selecionada. Se o e-mail já tiver uma conta, o acesso será associado sem enviar outro convite.</p>
-          <form id="form-convite" class="grid">
-            <div class="field"><label for="convite-email">E-mail do usuário</label><input id="convite-email" type="email" autocomplete="off" required></div>
+          <h3>Logins e acessos</h3>
+          <p>Crie um login e uma senha inicial para a empresa selecionada. Entregue a senha diretamente ao usuário; ela não será salva nem poderá ser consultada depois.</p>
+          <form id="form-criar-login" class="grid">
+            <div class="field"><label for="novo-login">Novo login</label><input id="novo-login" type="text" autocomplete="off" minlength="3" maxlength="32" pattern="[A-Za-z0-9._-]+" title="Use de 3 a 32 letras, números, ponto, traço ou sublinhado." required></div>
+            <div class="field"><label for="nova-senha-usuario">Senha inicial (mínimo 8 caracteres)</label><input id="nova-senha-usuario" type="password" autocomplete="new-password" minlength="8" required></div>
             <div class="field"><label for="convite-empresa">Empresa</label><select id="convite-empresa" required></select></div>
-            <button id="enviar-convite" class="btn primary" type="submit">Convidar e liberar acesso</button>
+            <button id="criar-login" class="btn primary" type="submit">Criar login e liberar acesso</button>
           </form>
-          <p id="convite-status" class="muted" role="status"></p>
+          <p id="criar-login-status" class="muted" role="status"></p>
         </div>
       </section>
       <section id="confirmar-importacao" class="card" hidden>
@@ -97,6 +98,8 @@ const SUPABASE_URL = "https://emphwdwkdoosdchwefmf.supabase.co";
 const SUPABASE_PUBLIC_KEY = "sb_publishable_5GWJrfCbsHXI4AVkIvJ6Dg_v3vnbdub";
 const TABELA_EMPRESAS = "companies";
 const TABELA_DADOS_EMPRESA = "company_state";
+const FUNCAO_LOGIN = "username-login";
+const FUNCAO_CRIAR_LOGIN = "admin-create-login";
 const CATEGORIAS = ["Lanche", "Bebida", "Porções", "Almoço", "Sobremesa", "Combo"];
 const UNIDADES = ["g", "kg", "ml", "L", "un"];
 const VERSAO_IMPORTACAO = "hamburgueria-2026-11-v2";
@@ -520,8 +523,15 @@ $("#form-login").addEventListener("submit",async e=>{
   e.preventDefault();const status=$("#login-status"),botao=$("button[type=submit]",e.currentTarget);
   botao.disabled=true;status.textContent="Autenticando…";
   try{
-    const resposta=await chamadaAuth("token?grant_type=password",{email:$("#login-email").value.trim(),password:$("#login-senha").value});
-    guardarSessao(resposta);await obterAcessoEmpresas();
+    const resposta=await fetch(`${SUPABASE_URL}/functions/v1/${FUNCAO_LOGIN}`,{
+      method:"POST",
+      headers:{apikey:SUPABASE_PUBLIC_KEY,"content-type":"application/json"},
+      body:JSON.stringify({login:$("#login-usuario").value.trim(),password:$("#login-senha").value})
+    });
+    let corpo={};try{corpo=await resposta.json()}catch{}
+    if(!resposta.ok)throw new Error(corpo.error||mensagemApi(resposta,corpo));
+    if(!corpo.access_token||!corpo.refresh_token)throw new Error("O serviço de login retornou uma sessão inválida.");
+    guardarSessao(corpo);await obterAcessoEmpresas();
   }catch(erro){console.error("Falha no login:",erro);status.textContent=`Não foi possível entrar: ${erro.message}`}
   finally{botao.disabled=false}
 });
@@ -553,22 +563,22 @@ $("#company-list").addEventListener("click",async e=>{
   try{await abrirEmpresa(botao.dataset.companyId)}
   catch(erro){console.error("Falha ao abrir empresa:",erro);status.textContent=`Não foi possível abrir a empresa: ${erro.message}`;$$("#company-list button").forEach(item=>item.disabled=false)}
 });
-$("#form-convite").addEventListener("submit",async e=>{
+$("#form-criar-login").addEventListener("submit",async e=>{
   e.preventDefault();
-  const status=$("#convite-status"),botao=$("#enviar-convite");
+  const status=$("#criar-login-status"),botao=$("#criar-login");
   if(!ehAdmin){status.textContent="Somente um administrador pode conceder acesso.";return}
-  botao.disabled=true;status.textContent="Processando acesso…";
+  botao.disabled=true;status.textContent="Criando login…";
   try{
-    const token=await tokenValido(),resposta=await fetch(`${SUPABASE_URL}/functions/v1/admin-invite`,{
+    const token=await tokenValido(),resposta=await fetch(`${SUPABASE_URL}/functions/v1/${FUNCAO_CRIAR_LOGIN}`,{
       method:"POST",
       headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:`Bearer ${token}`,"content-type":"application/json"},
-      body:JSON.stringify({email:$("#convite-email").value.trim(),company_id:$("#convite-empresa").value})
+      body:JSON.stringify({login:$("#novo-login").value.trim(),password:$("#nova-senha-usuario").value,company_id:$("#convite-empresa").value})
     });
     let corpo={};try{corpo=await resposta.json()}catch{}
     if(!resposta.ok)throw new Error(corpo.error||mensagemApi(resposta,corpo));
-    status.textContent=corpo.message||"Acesso concedido.";
-    $("#convite-email").value="";
-  }catch(erro){console.error("Falha ao conceder acesso:",erro);status.textContent=`Não foi possível conceder o acesso: ${erro.message}`}
+    status.textContent=corpo.message||"Login criado e acesso concedido.";
+    $("#novo-login").value="";$("#nova-senha-usuario").value="";
+  }catch(erro){console.error("Falha ao criar login:",erro);status.textContent=`Não foi possível criar o login: ${erro.message}`}
   finally{botao.disabled=false}
 });
 $("#exportar-dados").addEventListener("click",()=>{
