@@ -44,10 +44,6 @@
         <div class="field"><label for="login-senha">Senha</label><input id="login-senha" type="password" autocomplete="current-password" required></div>
         <button class="btn primary" type="submit">Entrar</button>
       </form>
-      <form id="form-definir-senha" class="grid" hidden>
-        <div class="field"><label for="nova-senha">Crie sua senha</label><input id="nova-senha" type="password" autocomplete="new-password" minlength="8" required></div>
-        <button class="btn primary" type="submit">Definir senha e entrar</button>
-      </form>
       <p id="login-status" class="muted" role="status"></p>
     </section>
     <section id="company-screen" class="card" hidden>
@@ -97,9 +93,6 @@ const MODELO_ANTHROPIC = "claude-3-5-sonnet-20241022";
 const SUPABASE_URL = "https://emphwdwkdoosdchwefmf.supabase.co";
 const SUPABASE_PUBLIC_KEY = "sb_publishable_5GWJrfCbsHXI4AVkIvJ6Dg_v3vnbdub";
 const TABELA_EMPRESAS = "companies";
-const TABELA_DADOS_EMPRESA = "company_state";
-const FUNCAO_LOGIN = "username-login";
-const FUNCAO_CRIAR_LOGIN = "admin-create-login";
 const CATEGORIAS = ["Lanche", "Bebida", "Porções", "Almoço", "Sobremesa", "Combo"];
 const UNIDADES = ["g", "kg", "ml", "L", "un"];
 const VERSAO_IMPORTACAO = "hamburgueria-2026-11-v2";
@@ -148,7 +141,7 @@ function salvar(){
 }
 function mostrarLogin(texto=""){
   $("#login-screen").hidden=false;$("#company-screen").hidden=true;$("#app-shell").hidden=true;$(".tabs").hidden=true;$("#sessao-controles").hidden=true;
-  $("#form-login").hidden=false;$("#form-definir-senha").hidden=true;
+  $("#form-login").hidden=false;
   $("#login-status").textContent=texto;
 }
 function mostrarSeletorEmpresas(texto=""){
@@ -158,7 +151,7 @@ function mostrarSeletorEmpresas(texto=""){
 }
 function mostrarAplicativo(){
   $("#login-screen").hidden=true;$("#company-screen").hidden=true;$("#app-shell").hidden=false;$(".tabs").hidden=false;$("#sessao-controles").hidden=false;
-  $("#status-sincronizacao").textContent=modoLocal?"Modo local: dados só neste navegador.":`Conectado${sessaoSupabase?.user?.email?` como ${sessaoSupabase.user.email}`:""}`;
+  $("#status-sincronizacao").textContent=modoLocal?"Modo local: dados só neste navegador.":`Conectado${sessaoSupabase?.username?` como ${sessaoSupabase.username}`:""}`;
   $("#sair").hidden=modoLocal;
   $("#empresa-atual").hidden=!empresaSelecionada;
   $("#empresa-atual").textContent=empresaSelecionada?.name||"";
@@ -178,46 +171,6 @@ function mensagemApi(resposta,corpo){
   const detalhe=corpo?.msg||corpo?.message||corpo?.error_description||corpo?.error;
   return detalhe?`${resposta.status}: ${detalhe}`:`Falha na comunicação com o Supabase (${resposta.status}).`;
 }
-async function chamadaAuth(path,body,method="POST"){
-  const resposta=await fetch(`${SUPABASE_URL}/auth/v1/${path}`,{method,headers:{"content-type":"application/json","apikey":SUPABASE_PUBLIC_KEY},body:body?JSON.stringify(body):undefined});
-  let corpo={};try{corpo=await resposta.json()}catch{}
-  if(!resposta.ok)throw new Error(mensagemApi(resposta,corpo));
-  return corpo;
-}
-async function atualizarToken(){
-  if(!sessaoSupabase?.refresh_token)throw new Error("Sua sessão expirou. Entre novamente.");
-  const nova=await chamadaAuth("token?grant_type=refresh_token",{refresh_token:sessaoSupabase.refresh_token});
-  guardarSessao(nova);return nova;
-}
-async function tokenValido(){
-  if(!sessaoSupabase?.access_token)throw new Error("Entre para acessar os dados.");
-  if(Number(sessaoSupabase.expires_at||0)<Date.now()/1000+60)return (await atualizarToken()).access_token;
-  return sessaoSupabase.access_token;
-}
-async function chamadaBanco(path,opcoes={}){
-  const token=await tokenValido();
-  const resposta=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...opcoes,headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:`Bearer ${token}`,"content-type":"application/json",...(opcoes.headers||{})}});
-  const texto=await resposta.text();let corpo=null;try{corpo=texto?JSON.parse(texto):null}catch{}
-  if(!resposta.ok)throw new Error(mensagemApi(resposta,corpo));
-  return corpo;
-}
-async function obterAcessoEmpresas(){
-  const token=await tokenValido();
-  const resposta=await fetch(`${SUPABASE_URL}/auth/v1/user`,{headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:`Bearer ${token}`}});
-  let corpo={};try{corpo=await resposta.json()}catch{}
-  if(!resposta.ok)throw new Error(mensagemApi(resposta,corpo));
-  sessaoSupabase.user=corpo;
-  guardarSessao(sessaoSupabase);
-  ehAdmin=await chamadaBanco("rpc/is_app_admin",{method:"POST",headers:{"content-type":"application/json"},body:"{}"})===true;
-  empresasDisponiveis=await chamadaBanco(`${TABELA_EMPRESAS}?select=id,name&order=name`,{headers:{Accept:"application/json"}});
-  if(!Array.isArray(empresasDisponiveis))throw new Error("O Supabase retornou uma lista de empresas inválida.");
-  if(ehAdmin){mostrarSeletorEmpresas();return}
-  if(empresasDisponiveis.length!==1){
-    if(!empresasDisponiveis.length)throw new Error("Esta conta ainda não está vinculada a uma empresa. Peça acesso ao administrador.");
-    throw new Error("Esta conta possui mais de uma empresa vinculada; solicite a correção ao administrador.");
-  }
-  await abrirEmpresa(empresasDisponiveis[0].id);
-}
 async function abrirEmpresa(id){
   const empresa=empresasDisponiveis.find(item=>item.id===id);
   if(!empresa)throw new Error("A empresa selecionada não está disponível para esta conta.");
@@ -228,29 +181,6 @@ async function abrirEmpresa(id){
     mostrarAplicativo();
     clearInterval(temporizadorPolling);temporizadorPolling=setInterval(verificarAtualizacoesRemotas,10000);
   }catch(erro){empresaSelecionada=null;throw erro}
-}
-async function lerDadosRemotos(){
-  if(!empresaSelecionada)throw new Error("Selecione uma empresa antes de carregar os dados.");
-  const linhas=await chamadaBanco(`${TABELA_DADOS_EMPRESA}?company_id=eq.${encodeURIComponent(empresaSelecionada.id)}&select=data,updated_at`,{headers:{Accept:"application/json"}});
-  return Array.isArray(linhas)?linhas[0]||null:null;
-}
-async function gravarDadosRemotos(esperado=null,conteudo=dados,revisao=null){
-  if(!empresaSelecionada)throw new Error("Selecione uma empresa antes de salvar os dados.");
-  const agora=new Date().toISOString();
-  const body=JSON.stringify({company_id:empresaSelecionada.id,data:conteudo,updated_at:agora});
-  let linha;
-  if(esperado){
-    const filtro=encodeURIComponent(esperado);
-    const linhas=await chamadaBanco(`${TABELA_DADOS_EMPRESA}?company_id=eq.${encodeURIComponent(empresaSelecionada.id)}&updated_at=eq.${filtro}`,{method:"PATCH",headers:{Prefer:"return=representation"},body});
-    linha=Array.isArray(linhas)?linhas[0]:null;
-    if(!linha)throw new Error("Os dados foram alterados por outra pessoa. Copie suas mudanças antes de recarregar para não sobrescrevê-las.");
-  }else{
-    const linhas=await chamadaBanco(TABELA_DADOS_EMPRESA,{method:"POST",headers:{Prefer:"return=representation"},body});
-    linha=Array.isArray(linhas)?linhas[0]:null;
-  }
-  if(!linha)throw new Error("O Supabase não confirmou a gravação dos dados compartilhados.");
-  carimboRemoto=linha.updated_at;
-  if(revisao===null||revisao===revisaoLocal)sincronizacaoPendente=false;
 }
 async function carregarOuCriarDadosRemotos(){
   let linha=await lerDadosRemotos();
@@ -322,29 +252,68 @@ async function verificarAtualizacoesRemotas(){
     }
   }catch(erro){console.error("Falha ao verificar atualizações remotas:",erro);$("#status-sincronizacao").textContent="Sem conexão com o banco; tentando novamente."}
 }
+async function chamadaRpc(nome,params={}){
+  const resposta=await fetch(`${SUPABASE_URL}/rest/v1/rpc/${encodeURIComponent(nome)}`,{
+    method:"POST",
+    headers:{apikey:SUPABASE_PUBLIC_KEY,"content-type":"application/json"},
+    body:JSON.stringify(params)
+  });
+  let corpo=null;try{corpo=await resposta.json()}catch{}
+  if(!resposta.ok)throw new Error(corpo?.message||corpo?.details||corpo?.hint||mensagemApi(resposta,corpo));
+  return corpo;
+}
+async function tokenValido(){
+  if(!sessaoSupabase?.access_token||Number(sessaoSupabase.expires_at||0)<Date.now()/1000){
+    limparSessao();
+    throw new Error("Sua sessão expirou. Entre novamente.");
+  }
+  return sessaoSupabase.access_token;
+}
+async function obterAcessoEmpresas(){
+  const acesso=await chamadaRpc("app_session_info",{p_token:await tokenValido()});
+  if(!acesso?.valid){limparSessao();throw new Error("Sessão expirada. Entre novamente.")}
+  sessaoSupabase.username=acesso.username;
+  sessaoSupabase.expires_at=Number(acesso.expires_at);
+  ehAdmin=acesso.is_admin===true;
+  guardarSessao(sessaoSupabase);
+  empresasDisponiveis=await chamadaRpc("app_list_companies",{p_token:sessaoSupabase.access_token});
+  if(!Array.isArray(empresasDisponiveis))throw new Error("O banco retornou uma lista de empresas inválida.");
+  if(ehAdmin){mostrarSeletorEmpresas();return}
+  if(empresasDisponiveis.length!==1){
+    if(!empresasDisponiveis.length)throw new Error("Esta conta ainda não está vinculada a uma empresa. Peça acesso ao administrador.");
+    throw new Error("Esta conta possui mais de uma empresa vinculada; solicite a correção ao administrador.");
+  }
+  await abrirEmpresa(empresasDisponiveis[0].id);
+}
+async function lerDadosRemotos(){
+  if(!empresaSelecionada)throw new Error("Selecione uma empresa antes de carregar os dados.");
+  return chamadaRpc("app_get_company_state",{
+    p_token:await tokenValido(),
+    p_company_id:empresaSelecionada.id
+  });
+}
+async function gravarDadosRemotos(esperado=null,conteudo=dados,revisao=null){
+  if(!empresaSelecionada)throw new Error("Selecione uma empresa antes de salvar os dados.");
+  const linha=await chamadaRpc("app_save_company_state",{
+    p_token:await tokenValido(),
+    p_company_id:empresaSelecionada.id,
+    p_expected_updated_at:esperado,
+    p_data:conteudo
+  });
+  if(!linha?.updated_at)throw new Error("O Supabase não confirmou a gravação dos dados compartilhados.");
+  carimboRemoto=linha.updated_at;
+  if(revisao===null||revisao===revisaoLocal)sincronizacaoPendente=false;
+}
 async function iniciarAplicativo(){
   if(modoLocal){mostrarAplicativo();return}
-  const hash=new URLSearchParams(location.hash.slice(1)),accessToken=hash.get("access_token"),refreshToken=hash.get("refresh_token");
-  if(accessToken&&refreshToken){
-    convitePendente=["invite","recovery"].includes(hash.get("type"));
-    guardarSessao({access_token:accessToken,refresh_token:refreshToken,expires_at:Number(hash.get("expires_at"))||Date.now()/1000+Number(hash.get("expires_in")||3600)});
-    history.replaceState(null,"",location.pathname+location.search);
-  }else{
-    try{sessaoSupabase=JSON.parse(localStorage.getItem("ft1_auth")||"null")}catch(erro){console.warn("Sessão local inválida.",erro);limparSessao()}
-  }
-  if(!sessaoSupabase){mostrarLogin();return}
-  try{
-    await tokenValido();
-    if(convitePendente){
-      mostrarLogin("Convite confirmado. Crie uma senha para continuar.");
-      $("#form-login").hidden=true;$("#form-definir-senha").hidden=false;
-      return;
-    }
-    await obterAcessoEmpresas();
-  }catch(erro){
-    console.error("Falha ao iniciar sessão compartilhada:",erro);
-    if(/401|403|JWT|expirou/i.test(erro.message)){limparSessao();mostrarLogin("Sessão inválida ou expirada. Entre novamente.")}
-    else{mostrarLogin(`Não foi possível carregar os dados compartilhados: ${erro.message}`)}
+  try{sessaoSupabase=JSON.parse(localStorage.getItem("ft1_auth")||"null")}
+  catch(erro){console.warn("Sessão local inválida.",erro);limparSessao()}
+  if(!sessaoSupabase?.access_token){mostrarLogin();return}
+  try{await obterAcessoEmpresas()}
+  catch(erro){
+    console.error("Falha ao iniciar sessão:",erro);
+    empresaSelecionada=null;empresasDisponiveis=[];ehAdmin=false;
+    mostrarLogin(`Não foi possível entrar: ${erro.message}`);
   }
 }
 function escapeHtml(valor){return String(valor??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -523,31 +492,12 @@ $("#form-login").addEventListener("submit",async e=>{
   e.preventDefault();const status=$("#login-status"),botao=$("button[type=submit]",e.currentTarget);
   botao.disabled=true;status.textContent="Autenticando…";
   try{
-    const resposta=await fetch(`${SUPABASE_URL}/functions/v1/${FUNCAO_LOGIN}`,{
-      method:"POST",
-      headers:{apikey:SUPABASE_PUBLIC_KEY,"content-type":"application/json"},
-      body:JSON.stringify({login:$("#login-usuario").value.trim(),password:$("#login-senha").value})
-    });
-    let corpo={};try{corpo=await resposta.json()}catch{}
-    if(!resposta.ok)throw new Error(corpo.error||mensagemApi(resposta,corpo));
-    if(!corpo.access_token||!corpo.refresh_token)throw new Error("O serviço de login retornou uma sessão inválida.");
+    const corpo=await chamadaRpc("app_login",{p_username:$("#login-usuario").value.trim(),p_password:$("#login-senha").value});
+    if(corpo?.error)throw new Error(corpo.error);
+    if(!corpo?.access_token||!corpo?.expires_at)throw new Error("O banco não retornou uma sessão válida.");
     guardarSessao(corpo);await obterAcessoEmpresas();
   }catch(erro){console.error("Falha no login:",erro);status.textContent=`Não foi possível entrar: ${erro.message}`}
   finally{botao.disabled=false}
-});
-$("#form-definir-senha").addEventListener("submit",async e=>{
-  e.preventDefault();const status=$("#login-status"),botao=$("button[type=submit]",e.currentTarget);botao.disabled=true;status.textContent="Atualizando senha…";
-  try{
-    const token=await tokenValido(),resposta=await fetch(`${SUPABASE_URL}/auth/v1/user`,{method:"PUT",headers:{"content-type":"application/json","apikey":SUPABASE_PUBLIC_KEY,Authorization:`Bearer ${token}`},body:JSON.stringify({password:$("#nova-senha").value})});
-    let corpo={};try{corpo=await resposta.json()}catch{}if(!resposta.ok)throw new Error(mensagemApi(resposta,corpo));
-    convitePendente=false;$("#form-definir-senha").hidden=true;$("#form-login").hidden=false;$("#nova-senha").value="";await obterAcessoEmpresas();
-  }catch(erro){console.error("Falha ao definir senha:",erro);status.textContent=`Não foi possível definir a senha: ${erro.message}`}
-  finally{botao.disabled=false}
-});
-$("#sair").addEventListener("click",async()=>{
-  try{if(sessaoSupabase?.access_token)await fetch(`${SUPABASE_URL}/auth/v1/logout`,{method:"POST",headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:`Bearer ${sessaoSupabase.access_token}`}})}
-  catch(erro){console.warn("Não foi possível invalidar a sessão no servidor.",erro)}
-  clearInterval(temporizadorPolling);clearTimeout(temporizadorSync);limparSessao();mostrarLogin("Você saiu da conta.");
 });
 $("#trocar-empresa").addEventListener("click",async()=>{
   if(sincronizacaoPendente){
@@ -564,23 +514,29 @@ $("#company-list").addEventListener("click",async e=>{
   catch(erro){console.error("Falha ao abrir empresa:",erro);status.textContent=`Não foi possível abrir a empresa: ${erro.message}`;$$("#company-list button").forEach(item=>item.disabled=false)}
 });
 $("#form-criar-login").addEventListener("submit",async e=>{
-  e.preventDefault();
+  e.preventDefault();e.stopImmediatePropagation();
   const status=$("#criar-login-status"),botao=$("#criar-login");
-  if(!ehAdmin){status.textContent="Somente um administrador pode conceder acesso.";return}
+  if(!ehAdmin){status.textContent="Somente o administrador pode criar logins.";return}
   botao.disabled=true;status.textContent="Criando login…";
   try{
-    const token=await tokenValido(),resposta=await fetch(`${SUPABASE_URL}/functions/v1/${FUNCAO_CRIAR_LOGIN}`,{
-      method:"POST",
-      headers:{apikey:SUPABASE_PUBLIC_KEY,Authorization:`Bearer ${token}`,"content-type":"application/json"},
-      body:JSON.stringify({login:$("#novo-login").value.trim(),password:$("#nova-senha-usuario").value,company_id:$("#convite-empresa").value})
+    const resultado=await chamadaRpc("app_create_login",{
+      p_token:await tokenValido(),
+      p_username:$("#novo-login").value.trim(),
+      p_password:$("#nova-senha-usuario").value,
+      p_company_id:$("#convite-empresa").value
     });
-    let corpo={};try{corpo=await resposta.json()}catch{}
-    if(!resposta.ok)throw new Error(corpo.error||mensagemApi(resposta,corpo));
-    status.textContent=corpo.message||"Login criado e acesso concedido.";
+    status.textContent=resultado?.message||"Login criado e acesso concedido.";
     $("#novo-login").value="";$("#nova-senha-usuario").value="";
   }catch(erro){console.error("Falha ao criar login:",erro);status.textContent=`Não foi possível criar o login: ${erro.message}`}
   finally{botao.disabled=false}
-});
+},{capture:true});
+$("#sair").addEventListener("click",async e=>{
+  e.preventDefault();e.stopImmediatePropagation();
+  try{if(sessaoSupabase?.access_token)await chamadaRpc("app_logout",{p_token:sessaoSupabase.access_token})}
+  catch(erro){console.warn("Não foi possível invalidar a sessão no banco.",erro)}
+  clearInterval(temporizadorPolling);clearTimeout(temporizadorSync);
+  empresaSelecionada=null;empresasDisponiveis=[];ehAdmin=false;limparSessao();mostrarLogin("Você saiu da conta.");
+},{capture:true});
 $("#exportar-dados").addEventListener("click",()=>{
   const blob=new Blob([JSON.stringify(dados,null,2)],{type:"application/json;charset=utf-8"});
   const url=URL.createObjectURL(blob),link=document.createElement("a");
