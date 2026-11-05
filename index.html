@@ -23,6 +23,11 @@
     .comanda-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start}.comanda-card{margin:0;display:grid;gap:10px;min-width:0}.comanda-card h3{margin:0 0 2px}.comanda-card .pos-cart{margin:0;max-height:260px}.comanda-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.comanda-total{font-size:1.2rem;color:var(--accent);white-space:nowrap}
     @media(max-width:480px){.comanda-grid{grid-template-columns:1fr}}
   </style>
+  <style>
+    .pos-discount{display:grid;grid-template-columns:auto 76px minmax(0,1fr);gap:8px;align-items:center;margin:12px 0 0}.pos-discount label{font-weight:650;font-size:.9rem}.pos-discount select,.pos-discount input,.line-obs{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 9px;color:var(--text);min-width:0;width:100%}.line-obs{margin-top:6px;font-size:.84rem;padding:5px 8px}.pos-cart-line>div:first-child{min-width:0}
+    .caixa-form{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}.caixa-form .field{max-width:240px;flex:1}.caixa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;align-items:start}.caixa-grid .card{margin:0;display:grid;gap:10px}.caixa-grid .card h3{margin:0}.caixa-hist-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:.9rem}.caixa-hist-valor{text-align:right;white-space:nowrap}
+    .rel-filtros{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}.rel-filtros .field{min-width:130px}.rel-filtros .filters{margin-bottom:0}.rel-chart-wrap{overflow-x:auto;margin-top:12px}.rel-chart{display:block;width:100%;min-width:640px;height:auto}.rel-chart text{fill:var(--muted);font-size:11px}.rel-chart .rel-grid{stroke:var(--border);stroke-width:1}.rel-chart .rel-col{fill:var(--accent)}.rel-chart .rel-col:hover{opacity:.8}
+  </style>
 </head>
 <body>
   <header>
@@ -39,6 +44,8 @@
     <nav class="tabs" aria-label="Seções" hidden>
       <button class="tab" data-tab="pdv">1. PDV</button>
       <button class="tab" data-tab="comanda">1.1. Comanda</button>
+      <button class="tab" data-tab="caixa">1.2. Caixa</button>
+      <button class="tab" data-tab="relatorio">1.3. Relatório</button>
       <button class="tab" data-tab="cardapio">2. Cardápio</button>
       <button class="tab" data-tab="producao">3. Produção</button>
       <button class="tab active" data-tab="ficha-tecnica">4. Ficha Técnica</button>
@@ -65,6 +72,8 @@
     <div id="app-shell" hidden>
       <section class="module-panel" id="panel-pdv"></section>
       <section class="module-panel" id="panel-comanda"></section>
+      <section class="module-panel" id="panel-caixa"></section>
+      <section class="module-panel" id="panel-relatorio"></section>
       <section class="module-panel" id="panel-cardapio"></section>
       <section class="module-panel" id="panel-producao"><div class="card"><h2>Produção</h2><p class="muted">Módulo de produção. Esta área está preparada para acompanhar preparo e pedidos da cozinha.</p></div></section>
       <section class="module-panel active" id="panel-ficha-tecnica">
@@ -124,6 +133,8 @@ const CATEGORIAS_PADRAO = ["Lanche", "Bebida", "Porções", "Almoço", "Sobremes
 const ABAS = [
   ["pdv", "1. PDV"],
   ["comanda", "1.1. Comanda"],
+  ["caixa", "1.2. Caixa"],
+  ["relatorio", "1.3. Relatório"],
   ["cardapio", "2. Cardápio"],
   ["producao", "3. Produção"],
   ["ficha-tecnica", "4. Ficha Técnica"],
@@ -136,7 +147,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const exemplo = {
   insumos:[],fichas:[],custos:[],faturamento:0,imposto:0,taxas:0,margemPadrao:0,
   chaveApi:"",categorias:[...CATEGORIAS_PADRAO],categoriaCombo:"Combo",categoriaFiltro:"Todas",
-  pedidoPdv:[],vendasPdv:[],comandas:[],ultimaAnalise:"",versaoImportacao:VERSAO_IMPORTACAO
+  pedidoPdv:[],vendasPdv:[],comandas:[],caixas:[],ultimaAnalise:"",versaoImportacao:VERSAO_IMPORTACAO
 };
 let dados = carregarDados();
 let abaAtiva = "ficha-tecnica";
@@ -173,6 +184,19 @@ function carregarDados(){
     return normalizarDados(obj);
   }catch(erro){console.warn("Não foi possível carregar os dados salvos; usando os dados de exemplo.",erro);return structuredClone(exemplo)}
 }
+function normalizarDesconto(d){
+  const tipo=d?.tipo==="percentual"?"percentual":"valor";
+  let valor=Math.max(0,n(d?.valor));if(tipo==="percentual")valor=Math.min(100,valor);
+  return {tipo,valor:valor>0?valor:""};
+}
+function calcDesconto(subtotal,d){
+  const v=Math.max(0,n(d?.valor)),bruto=d?.tipo==="percentual"?subtotal*Math.min(v,100)/100:v;
+  return Math.round(Math.min(Math.max(subtotal,0),bruto)*100)/100;
+}
+function normalizarCaixas(lista){
+  if(!Array.isArray(lista))return [];
+  return lista.filter(c=>c&&c.id&&c.abertoEm).map(c=>({...c,fundoInicial:Math.max(0,n(c.fundoInicial)),fechadoEm:c.fechadoEm||null}));
+}
 function chaveComanda(texto){return String(texto||"").trim().replace(/\s+/g," ").toLocaleLowerCase("pt-BR")}
 function totalComanda(c){return c.itens.reduce((t,i)=>t+n(i.precoUnitario)*n(i.quantidade),0)}
 function normalizarComandas(lista){
@@ -180,9 +204,9 @@ function normalizarComandas(lista){
   return lista.filter(c=>c&&String(c.identificador||"").trim()).map(c=>({
     id:String(c.id||uid()),
     identificador:String(c.identificador).trim().replace(/\s+/g," ").slice(0,40),
-    criadaEm:c.criadaEm||new Date().toISOString(),
+    criadaEm:c.criadaEm||new Date().toISOString(),desconto:normalizarDesconto(c.desconto),
     itens:(Array.isArray(c.itens)?c.itens:[]).filter(i=>i&&n(i.quantidade)>0).map(i=>({
-      linhaId:String(i.linhaId||uid()),fichaId:i.fichaId,nome:String(i.nome||"Produto"),
+      linhaId:String(i.linhaId||uid()),obs:String(i.obs||"").slice(0,120),fichaId:i.fichaId,nome:String(i.nome||"Produto"),
       precoUnitario:Math.max(0,n(i.precoUnitario)),quantidade:Math.max(1,Math.floor(n(i.quantidade)))
     }))
   }));
@@ -194,11 +218,12 @@ function normalizarDados(obj){
     custos:Array.isArray(obj.custos)?obj.custos:structuredClone(exemplo.custos),
     pedidoPdv:Array.isArray(obj.pedidoPdv)?obj.pedidoPdv:[],
     vendasPdv:Array.isArray(obj.vendasPdv)?obj.vendasPdv:[],
-    comandas:normalizarComandas(obj.comandas)};
+    comandas:normalizarComandas(obj.comandas),
+    caixas:normalizarCaixas(obj.caixas)};
   normalizado.fichas.forEach(f=>{f.publicadoPdv=f.publicadoPdv===true});
   const fichasPorId=new Map(normalizado.fichas.map(f=>[f.id,f]));
   normalizado.pedidoPdv=normalizado.pedidoPdv.filter(item=>fichasPorId.has(item.fichaId)&&n(item.quantidade)>0).map(item=>({
-    fichaId:item.fichaId,nome:String(item.nome||fichasPorId.get(item.fichaId).nome),
+    linhaId:String(item.linhaId||uid()),obs:String(item.obs||"").slice(0,120),fichaId:item.fichaId,nome:String(item.nome||fichasPorId.get(item.fichaId).nome),
     precoUnitario:Math.max(0,n(item.precoUnitario)),quantidade:Math.max(1,Math.floor(n(item.quantidade)))
   }));
   normalizado.vendasPdv=normalizado.vendasPdv.filter(v=>v&&Array.isArray(v.itens)&&Number.isFinite(Number(v.total)));
@@ -278,7 +303,7 @@ async function abrirEmpresa(id){
   const empresa=empresasDisponiveis.find(item=>item.id===id);
   if(!empresa)throw new Error("A empresa selecionada não está disponível para esta conta.");
   clearInterval(temporizadorPolling);clearTimeout(temporizadorSync);
-  categoriasRascunho=null;erroCategorias="";statusPdv="";remocaoPdvPendente="";pagamentoPdv="Pix";comandaPdv="";statusComanda="";confirmacaoComanda="";pagamentoComanda={};
+  categoriasRascunho=null;erroCategorias="";statusPdv="";remocaoPdvPendente="";pagamentoPdv="Pix";comandaPdv="";statusComanda="";confirmacaoComanda="";pagamentoComanda={};descontoPdv={tipo:"valor",valor:""};statusCaixa="";confirmacaoCaixa=false;
   empresaSelecionada=empresa;sincronizacaoPendente=false;sincronizacaoEmCurso=false;conflitoSincronizacao=false;carimboRemoto=null;
   try{
     await carregarOuCriarDadosRemotos();
@@ -506,22 +531,168 @@ let statusComanda="";
 let confirmacaoComanda="";
 let pagamentoComanda={};
 function acharComanda(id){return dados.comandas.find(c=>c.id===id)}
+let descontoPdv={tipo:"valor",valor:""};
+let statusCaixa="";
+let fundoCaixa="";
+let contadoCaixa="";
+let obsCaixa="";
+let confirmacaoCaixa=false;
+const hojeLocal=()=>{const d=new Date(),p=x=>String(x).padStart(2,"0");return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`};
+let relTipo="dia",relDia=hojeLocal(),relMesNum=Number(relDia.slice(5,7)),relAno=Number(relDia.slice(0,4)),relMetrica="valor",relTop="periodo";
+const arred=x=>Math.round(x*100)/100;
+function caixaAberto(){return dados.caixas.find(c=>!c.fechadoEm)||null}
+function totalPdvLiquido(){const s=totalPedidoPdv();return arred(s-calcDesconto(s,descontoPdv))}
+function htmlDesconto(escopo,desc,id){
+ const attrs=`data-desc-scope="${escopo}"${id?` data-desc-id="${escapeHtml(id)}"`:""}`;
+ return `<div class="pos-discount"><label>Desconto</label><select ${attrs} data-desc-tipo aria-label="Tipo de desconto"><option value="valor" ${desc?.tipo!=="percentual"?"selected":""}>R$</option><option value="percentual" ${desc?.tipo==="percentual"?"selected":""}>%</option></select><input type="number" min="0" step="0.01" inputmode="decimal" ${attrs} data-desc-valor value="${n(desc?.valor)>0?escapeHtml(desc.valor):""}" placeholder="0,00" aria-label="Valor do desconto"></div>`;
+}
+function aplicarDescontoDom(t){
+ const raiz=t.closest(".pos-discount");if(!raiz)return;
+ const tipo=$("[data-desc-tipo]",raiz).value,valor=$("[data-desc-valor]",raiz).value;
+ if(t.dataset.descScope==="pdv"){descontoPdv={tipo,valor};atualizarTotaisPdv();return}
+ const c=acharComanda(t.dataset.descId);if(!c)return;
+ c.desconto=normalizarDesconto({tipo,valor});salvar();atualizarTotaisComanda(c);
+}
+function atualizarTotaisPdv(){
+ const painel=$("#panel-pdv");if(!painel)return;
+ const sub=totalPedidoPdv(),desc=calcDesconto(sub,descontoPdv),total=arred(sub-desc);
+ const set=(sel,txt)=>{const el=$(sel,painel);if(el)el.textContent=txt};
+ set("[data-pdv-subtotal]",moeda(sub));set("[data-pdv-desconto]",`− ${moeda(desc)}`);set("[data-pdv-total]",moeda(total));set("[data-pdv-registrar]",`Registrar venda · ${moeda(total)}`);
+ const linha=$("[data-pdv-desconto-linha]",painel);if(linha)linha.hidden=desc<=0;
+}
+function atualizarTotaisComanda(c){
+ const card=$(`[data-comanda-card="${CSS.escape(c.id)}"]`);if(!card)return;
+ const sub=totalComanda(c),desc=calcDesconto(sub,c.desconto),total=arred(sub-desc);
+ const set=(sel,txt)=>{const el=$(sel,card);if(el)el.textContent=txt};
+ set("[data-c-subtotal]",moeda(sub));set("[data-c-desconto]",`− ${moeda(desc)}`);set("[data-c-total]",moeda(total));set("[data-c-total-head]",moeda(total));set("[data-c-fechar]",`Fechar e registrar venda · ${moeda(total)}`);
+ const linha=$("[data-c-desconto-linha]",card);if(linha)linha.hidden=desc<=0;
+}
+function renderModulosVenda(){
+ if(abaPermitida("pdv"))renderPdv();
+ if(abaPermitida("comanda"))renderComanda();
+ if(abaPermitida("caixa"))renderCaixa();
+}
 function renderComanda(){
  const painel=$("#panel-comanda");if(!painel)return;
  const lista=[...dados.comandas].sort((a,b)=>String(a.criadaEm).localeCompare(String(b.criadaEm)));
- const totalAberto=lista.reduce((t,c)=>t+totalComanda(c),0);
+ const totalAberto=lista.reduce((t,c)=>t+arred(totalComanda(c)-calcDesconto(totalComanda(c),c.desconto)),0);
+ const caixa=caixaAberto();
  const cards=lista.map(c=>{
-  const id=escapeHtml(c.id),total=totalComanda(c),pag=pagamentoComanda[c.id]||"Pix";
+  const id=escapeHtml(c.id),sub=totalComanda(c),desc=calcDesconto(sub,c.desconto),total=arred(sub-desc),pag=pagamentoComanda[c.id]||"Pix";
   const qtd=c.itens.reduce((t,i)=>t+n(i.quantidade),0),data=new Date(c.criadaEm);
   const hora=Number.isNaN(data.getTime())?"":data.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
   const linhas=c.itens.map(item=>{
    const linha=escapeHtml(item.linhaId),chave=`item:${item.linhaId}`;
-   return `<div class="pos-cart-line"><div><div class="pos-line-name">${escapeHtml(item.nome)}</div><div class="muted">${moeda(n(item.precoUnitario))} cada</div><div class="pos-line-controls"><button class="btn small" data-action="comanda-diminuir" data-comanda="${id}" data-linha="${linha}" aria-label="Diminuir quantidade">−</button><span>${n(item.quantidade)}</span><button class="btn small" data-action="comanda-aumentar" data-comanda="${id}" data-linha="${linha}" aria-label="Aumentar quantidade">+</button>${confirmacaoComanda===chave?`<button class="btn small danger" data-action="comanda-confirmar-item" data-comanda="${id}" data-linha="${linha}">Confirmar</button><button class="btn small" data-action="comanda-cancelar-confirmacao">Cancelar</button>`:`<button class="btn small danger" data-action="comanda-remover-item" data-comanda="${id}" data-linha="${linha}">Remover</button>`}</div></div><div class="pos-line-total">${moeda(n(item.precoUnitario)*n(item.quantidade))}</div></div>`;
+   return `<div class="pos-cart-line"><div><div class="pos-line-name">${escapeHtml(item.nome)}</div><div class="muted">${moeda(n(item.precoUnitario))} cada</div><div class="pos-line-controls"><button class="btn small" data-action="comanda-diminuir" data-comanda="${id}" data-linha="${linha}" aria-label="Diminuir quantidade">−</button><span>${n(item.quantidade)}</span><button class="btn small" data-action="comanda-aumentar" data-comanda="${id}" data-linha="${linha}" aria-label="Aumentar quantidade">+</button>${confirmacaoComanda===chave?`<button class="btn small danger" data-action="comanda-confirmar-item" data-comanda="${id}" data-linha="${linha}">Confirmar</button><button class="btn small" data-action="comanda-cancelar-confirmacao">Cancelar</button>`:`<button class="btn small danger" data-action="comanda-remover-item" data-comanda="${id}" data-linha="${linha}">Remover</button>`}</div><input class="line-obs" type="text" maxlength="120" data-comanda-obs data-comanda="${id}" data-linha="${linha}" placeholder="Observação (ex.: sem cebola)" value="${escapeHtml(item.obs||"")}" aria-label="Observação do item"></div><div class="pos-line-total">${moeda(n(item.precoUnitario)*n(item.quantidade))}</div></div>`;
   }).join("");
   const cancelando=confirmacaoComanda===`cancelar:${c.id}`;
-  return `<article class="card comanda-card" data-comanda-card data-search="${escapeHtml(c.identificador.toLocaleLowerCase("pt-BR"))}"><div class="comanda-head"><div><h3>Comanda ${escapeHtml(c.identificador)}</h3><span class="muted">${hora?`Aberta às ${hora} · `:""}${qtd} ${qtd===1?"item":"itens"}</span></div><strong class="comanda-total">${moeda(total)}</strong></div><div class="pos-cart">${linhas||'<div class="empty">Comanda sem itens.</div>'}</div><div class="actions"><button class="btn small" data-action="comanda-adicionar" data-comanda="${id}">Adicionar itens</button>${cancelando?`<button class="btn small danger" data-action="comanda-confirmar-cancelamento" data-comanda="${id}">Confirmar cancelamento</button><button class="btn small" data-action="comanda-cancelar-confirmacao">Voltar</button>`:`<button class="btn small danger" data-action="comanda-cancelar" data-comanda="${id}">Cancelar comanda</button>`}</div><h3>Forma de pagamento</h3><div class="pos-payment-options">${["Dinheiro","Pix","Crédito","Débito"].map(m=>`<button class="btn ${pag===m?"selected":""}" type="button" data-action="comanda-pagamento" data-comanda="${id}" data-method="${m}">${m}</button>`).join("")}</div><button class="btn primary" style="width:100%" data-action="comanda-fechar" data-comanda="${id}" ${c.itens.length?"":"disabled"}>Fechar e registrar venda · ${moeda(total)}</button></article>`;
+  return `<article class="card comanda-card" data-comanda-card="${id}" data-search="${escapeHtml(c.identificador.toLocaleLowerCase("pt-BR"))}"><div class="comanda-head"><div><h3>Comanda ${escapeHtml(c.identificador)}</h3><span class="muted">${hora?`Aberta às ${hora} · `:""}${qtd} ${qtd===1?"item":"itens"}</span></div><strong class="comanda-total" data-c-total-head>${moeda(total)}</strong></div><div class="pos-cart">${linhas||'<div class="empty">Comanda sem itens.</div>'}</div><div class="actions"><button class="btn small" data-action="comanda-adicionar" data-comanda="${id}">Adicionar itens</button>${cancelando?`<button class="btn small danger" data-action="comanda-confirmar-cancelamento" data-comanda="${id}">Confirmar cancelamento</button><button class="btn small" data-action="comanda-cancelar-confirmacao">Voltar</button>`:`<button class="btn small danger" data-action="comanda-cancelar" data-comanda="${id}">Cancelar comanda</button>`}</div>${htmlDesconto("comanda",c.desconto,c.id)}<div class="pos-totals"><div class="pos-total-row"><span>Subtotal</span><strong data-c-subtotal>${moeda(sub)}</strong></div><div class="pos-total-row" data-c-desconto-linha ${desc>0?"":"hidden"}><span>Desconto</span><strong data-c-desconto>− ${moeda(desc)}</strong></div><div class="pos-total-row final"><span>Total</span><strong data-c-total>${moeda(total)}</strong></div></div><h3>Forma de pagamento</h3><div class="pos-payment-options">${["Dinheiro","Pix","Crédito","Débito"].map(m=>`<button class="btn ${pag===m?"selected":""}" type="button" data-action="comanda-pagamento" data-comanda="${id}" data-method="${m}">${m}</button>`).join("")}</div><button class="btn primary" style="width:100%" data-action="comanda-fechar" data-comanda="${id}" data-c-fechar ${c.itens.length&&caixa?"":"disabled"}>Fechar e registrar venda · ${moeda(total)}</button></article>`;
  }).join("");
- painel.innerHTML=`<div class="pos-toolbar"><div><h2>Comandas abertas</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Atendimento")} · ${lista.length} ${lista.length===1?"comanda":"comandas"} · ${moeda(totalAberto)} em aberto</div></div><label class="field pos-search"><span>Buscar comanda</span><input type="search" data-comanda-search placeholder="Nome ou número"></label></div>${statusComanda?`<div class="notice" role="status">${escapeHtml(statusComanda)}</div>`:""}${lista.length?`<div class="comanda-grid">${cards}</div>`:'<div class="card empty">Nenhuma comanda aberta. No PDV, monte o pedido, digite o nome ou número da comanda e toque em “Enviar para comanda”.</div>'}`;
+ painel.innerHTML=`<div class="pos-toolbar"><div><h2>Comandas abertas</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Atendimento")} · ${lista.length} ${lista.length===1?"comanda":"comandas"} · ${moeda(totalAberto)} em aberto</div></div><label class="field pos-search"><span>Buscar comanda</span><input type="search" data-comanda-search placeholder="Nome ou número"></label></div>${caixa?"":'<div class="notice warning">Caixa fechado. Abra o caixa na aba 1.2. Caixa para poder fechar comandas e registrar as vendas.</div>'}${statusComanda?`<div class="notice" role="status">${escapeHtml(statusComanda)}</div>`:""}${lista.length?`<div class="comanda-grid">${cards}</div>`:'<div class="card empty">Nenhuma comanda aberta. No PDV, monte o pedido, digite o nome ou número da comanda e toque em “Enviar para comanda”.</div>'}`;
+}
+function resumoCaixa(caixa){
+ const vendas=dados.vendasPdv.filter(v=>v.caixaId===caixa.id);
+ const porForma={Dinheiro:0,Pix:0,"Crédito":0,"Débito":0};
+ let bruto=0,descontos=0,total=0;
+ for(const v of vendas){
+  const t=n(v.total),d=n(v.desconto);
+  bruto+=v.subtotal!==undefined?n(v.subtotal):t+d;descontos+=d;total+=t;
+  porForma[v.formaPagamento]=(porForma[v.formaPagamento]||0)+t;
+ }
+ return {vendas:vendas.length,bruto:arred(bruto),descontos:arred(descontos),total:arred(total),porForma,dinheiroEsperado:arred(n(caixa.fundoInicial)+porForma.Dinheiro)};
+}
+function atualizarDiferencaCaixa(){
+ const caixa=caixaAberto(),el=$("[data-caixa-diferenca]");if(!caixa||!el)return;
+ if(String(contadoCaixa).trim()===""){el.textContent="—";el.className="";return}
+ const dif=arred(n(contadoCaixa)-resumoCaixa(caixa).dinheiroEsperado);
+ el.textContent=`${dif>0?"+":""}${moeda(dif)}`;el.className=dif===0?"good":"bad";
+}
+function renderCaixa(){
+ const painel=$("#panel-caixa");if(!painel)return;
+ const aberto=caixaAberto();
+ const fmt=iso=>{const d=new Date(iso);return Number.isNaN(d.getTime())?"—":d.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})};
+ let corpo;
+ if(!aberto){
+  corpo=`<div class="card"><h2>Caixa fechado</h2><p class="muted">Informe o dinheiro que está no caixa como troco inicial e abra o caixa do dia. Enquanto estiver fechado, não é possível registrar vendas.</p><div class="caixa-form"><label class="field"><span>Valor inicial / troco (R$)</span><input type="number" min="0" step="0.01" inputmode="decimal" data-caixa-fundo placeholder="0,00" value="${escapeHtml(fundoCaixa)}"></label><button class="btn primary" type="button" data-action="caixa-abrir">Abrir caixa</button></div></div>`;
+ }else{
+  const r=resumoCaixa(aberto);
+  const formas=Object.entries(r.porForma).map(([k,v])=>`<div class="pos-total-row"><span>${escapeHtml(k)}</span><strong>${moeda(v)}</strong></div>`).join("");
+  corpo=`<div class="card"><div class="comanda-head"><div><h2>Caixa aberto</h2><span class="muted">Aberto em ${fmt(aberto.abertoEm)} por ${escapeHtml(aberto.abertoPor||"—")}</span></div><span class="pill">Aberto</span></div><div class="stat-grid"><div class="stat"><span>Vendas</span><strong>${r.vendas}</strong></div><div class="stat"><span>Total vendido</span><strong>${moeda(r.total)}</strong></div><div class="stat"><span>Descontos</span><strong>${moeda(r.descontos)}</strong></div><div class="stat"><span>Troco inicial</span><strong>${moeda(n(aberto.fundoInicial))}</strong></div></div></div><div class="caixa-grid"><div class="card"><h3>Vendas por forma de pagamento</h3><div class="pos-totals">${formas}</div></div><div class="card"><h3>Fechar caixa</h3><div class="pos-total-row"><span>Dinheiro esperado (troco + vendas em dinheiro)</span><strong>${moeda(r.dinheiroEsperado)}</strong></div><label class="field"><span>Dinheiro contado no caixa (R$)</span><input type="number" min="0" step="0.01" inputmode="decimal" data-caixa-contado placeholder="0,00" value="${escapeHtml(contadoCaixa)}"></label><div class="pos-total-row"><span>Diferença (sobra + / falta −)</span><strong data-caixa-diferenca>—</strong></div><label class="field"><span>Observação do fechamento (opcional)</span><input type="text" maxlength="200" data-caixa-obs value="${escapeHtml(obsCaixa)}"></label>${dados.comandas.length?`<p class="notice warning">Há ${dados.comandas.length} ${dados.comandas.length===1?"comanda aberta":"comandas abertas"} sem pagamento. Elas continuam abertas após o fechamento.</p>`:""}${confirmacaoCaixa?`<div class="actions"><button class="btn danger" type="button" data-action="caixa-confirmar-fechar">Confirmar fechamento</button><button class="btn" type="button" data-action="caixa-cancelar-fechamento">Voltar</button></div>`:`<button class="btn primary" type="button" data-action="caixa-fechar">Fechar caixa</button>`}</div></div>`;
+ }
+ const historico=dados.caixas.filter(c=>c.fechadoEm).slice(-10).reverse().map(c=>{
+  const r=c.resumo||{vendas:0,total:0},dif=n(c.diferenca);
+  return `<div class="caixa-hist-row"><div><strong>${fmt(c.abertoEm)} → ${fmt(c.fechadoEm)}</strong><div class="muted">${n(r.vendas)} ${n(r.vendas)===1?"venda":"vendas"} · troco ${moeda(n(c.fundoInicial))} · contado ${moeda(n(c.dinheiroContado))}${c.observacao?` · ${escapeHtml(c.observacao)}`:""}</div></div><div class="caixa-hist-valor"><strong>${moeda(n(r.total))}</strong><div class="${dif===0?"muted":"bad"}">Dif. ${dif>0?"+":""}${moeda(dif)}</div></div></div>`;
+ }).join("");
+ painel.innerHTML=`<div class="pos-toolbar"><div><h2>Caixa</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Atendimento")}</div></div></div>${statusCaixa?`<div class="notice" role="status">${escapeHtml(statusCaixa)}</div>`:""}${corpo}<div class="card"><h3>Fechamentos anteriores</h3>${historico||'<span class="muted">Nenhum caixa fechado ainda.</span>'}</div>`;
+ atualizarDiferencaCaixa();
+}
+function maxAgradavel(m){
+ if(m<=0)return 4;
+ const e=Math.pow(10,Math.floor(Math.log10(m))),f=m/e;
+ return (f<=1?1:f<=2?2:f<=4?4:f<=8?8:10)*e;
+}
+function svgGrafico(buckets,metrica){
+ const W=800,H=300,mL=70,mR=12,mT=18,mB=34,iw=W-mL-mR,ih=H-mT-mB,bw=iw/buckets.length;
+ const vals=buckets.map(b=>metrica==="qtd"?b.qtd:b.valor),max=Math.max(...vals,0);
+ const topo=metrica==="qtd"?Math.max(4,Math.ceil(max/4)*4):maxAgradavel(max);
+ const fmtTick=v=>metrica==="qtd"?String(Math.round(v)):`R$ ${v>=1000?`${(v/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})} mil`:v.toLocaleString("pt-BR",{maximumFractionDigits:2})}`;
+ const passo=Math.ceil(buckets.length/16),mostrarValores=buckets.length<=12;
+ let s=`<svg class="rel-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfico de vendas">`;
+ for(let i=0;i<=4;i++){
+  const y=mT+ih-ih*i/4;
+  s+=`<line class="rel-grid" x1="${mL}" x2="${W-mR}" y1="${y}" y2="${y}"/><text x="${mL-8}" y="${y+4}" text-anchor="end">${escapeHtml(fmtTick(topo*i/4))}</text>`;
+ }
+ buckets.forEach((b,i)=>{
+  const v=vals[i],h=topo>0?ih*v/topo:0,x=mL+i*bw+bw*.15,w=bw*.7,y=mT+ih-h;
+  s+=`<rect class="rel-col" x="${x}" y="${y}" width="${w}" height="${Math.max(h,v>0?1:0)}" rx="3"><title>${escapeHtml(b.rotulo)}: ${escapeHtml(moeda(b.valor))} · ${b.qtd} ${b.qtd===1?"venda":"vendas"}</title></rect>`;
+  if(i%passo===0)s+=`<text x="${x+w/2}" y="${H-12}" text-anchor="middle">${escapeHtml(b.rotulo)}</text>`;
+  if(mostrarValores&&v>0)s+=`<text x="${x+w/2}" y="${y-5}" text-anchor="middle">${escapeHtml(metrica==="qtd"?String(v):moeda(v))}</text>`;
+ });
+ return s+"</svg>";
+}
+function produtosMaisVendidos(vendas){
+ const mapa=new Map();
+ for(const v of vendas)for(const i of v.itens||[]){
+  const chave=i.fichaId||i.nome,q=n(i.quantidade),r=mapa.get(chave)||{nome:i.nome||"Produto",qtd:0,receita:0};
+  r.qtd+=q;r.receita+=n(i.precoUnitario)*q;if(i.nome)r.nome=i.nome;mapa.set(chave,r);
+ }
+ return [...mapa.values()].sort((a,b)=>b.qtd-a.qtd||b.receita-a.receita);
+}
+function renderRelatorio(){
+ const painel=$("#panel-relatorio");if(!painel)return;
+ const meses=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+ const mk=rotulo=>({rotulo,valor:0,qtd:0});
+ let inicio,fim,buckets,titulo,indice,controle;
+ if(relTipo==="dia"){
+  let [a,m,d]=String(relDia).split("-").map(Number);if(!a||!m||!d)[a,m,d]=hojeLocal().split("-").map(Number);
+  inicio=new Date(a,m-1,d);fim=new Date(a,m-1,d+1);
+  buckets=Array.from({length:24},(_,i)=>mk(`${String(i).padStart(2,"0")}h`));
+  titulo=inicio.toLocaleDateString("pt-BR",{dateStyle:"long"});indice=dt=>dt.getHours();
+  controle=`<label class="field"><span>Dia</span><input type="date" data-rel-dia value="${escapeHtml(relDia)}"></label>`;
+ }else if(relTipo==="mes"){
+  inicio=new Date(relAno,relMesNum-1,1);fim=new Date(relAno,relMesNum,1);
+  buckets=Array.from({length:new Date(relAno,relMesNum,0).getDate()},(_,i)=>mk(String(i+1)));
+  titulo=`${meses[relMesNum-1]} de ${relAno}`;indice=dt=>dt.getDate()-1;
+  controle=`<label class="field"><span>Mês</span><select data-rel-mesnum>${meses.map((nome,i)=>`<option value="${i+1}" ${i+1===relMesNum?"selected":""}>${nome}</option>`).join("")}</select></label><label class="field"><span>Ano</span><input type="number" min="2000" max="2100" step="1" data-rel-ano value="${relAno}"></label>`;
+ }else{
+  inicio=new Date(relAno,0,1);fim=new Date(relAno+1,0,1);
+  buckets=meses.map(nome=>mk(nome.slice(0,3)));titulo=`Ano de ${relAno}`;indice=dt=>dt.getMonth();
+  controle=`<label class="field"><span>Ano</span><input type="number" min="2000" max="2100" step="1" data-rel-ano value="${relAno}"></label>`;
+ }
+ const todas=dados.vendasPdv.map(v=>({v,dt:new Date(v.dataHora)})).filter(x=>!Number.isNaN(x.dt.getTime()));
+ const doPeriodo=todas.filter(x=>x.dt>=inicio&&x.dt<fim);
+ for(const {v,dt} of doPeriodo){const b=buckets[indice(dt)];if(b){b.valor+=n(v.total);b.qtd++}}
+ const vendas=doPeriodo.map(x=>x.v);
+ const total=vendas.reduce((t,v)=>t+n(v.total),0),descontos=vendas.reduce((t,v)=>t+n(v.desconto),0);
+ const itens=vendas.reduce((t,v)=>t+(v.itens||[]).reduce((s,i)=>s+n(i.quantidade),0),0);
+ const ticket=vendas.length?total/vendas.length:0;
+ const porForma=new Map();for(const v of vendas)porForma.set(v.formaPagamento||"—",(porForma.get(v.formaPagamento||"—")||0)+n(v.total));
+ const formas=[...porForma.entries()].sort((a,b)=>b[1]-a[1]);
+ const maxForma=Math.max(...formas.map(f=>f[1]),0);
+ const baseTop=relTop==="tudo"?todas.map(x=>x.v):vendas;
+ const ranking=produtosMaisVendidos(baseTop).slice(0,20),maxQtd=ranking[0]?.qtd||0;
+ const filtro=(acao,atual,itensF)=>itensF.map(([id,nome])=>`<button class="filter ${atual===id?"active":""}" type="button" data-action="${acao}" data-valor="${id}">${nome}</button>`).join("");
+ painel.innerHTML=`<div class="pos-toolbar"><div><h2>Relatório de vendas</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Atendimento")} · ${escapeHtml(titulo)}</div></div></div><div class="card"><div class="rel-filtros"><div><div class="label">Período</div><div class="filters">${filtro("rel-tipo",relTipo,[["dia","Dia"],["mes","Mês"],["ano","Ano"]])}</div></div>${controle}<div><div class="label">Gráfico</div><div class="filters">${filtro("rel-metrica",relMetrica,[["valor","Faturamento"],["qtd","Nº de vendas"]])}</div></div></div><div class="stat-grid"><div class="stat"><span>Faturamento</span><strong>${moeda(total)}</strong></div><div class="stat"><span>Vendas</span><strong>${vendas.length}</strong></div><div class="stat"><span>Ticket médio</span><strong>${moeda(ticket)}</strong></div><div class="stat"><span>Itens vendidos</span><strong>${itens}</strong></div><div class="stat"><span>Descontos</span><strong>${moeda(descontos)}</strong></div></div><div class="rel-chart-wrap">${svgGrafico(buckets,relMetrica)}</div>${vendas.length?"":'<p class="muted">Nenhuma venda registrada neste período.</p>'}</div>${formas.length?`<div class="card"><h3>Por forma de pagamento</h3>${formas.map(([nome,valor])=>`<div class="bar-row"><span>${escapeHtml(nome)}</span><div class="bar-track"><div class="bar" style="width:${maxForma?valor/maxForma*100:0}%"></div></div><span class="bar-value">${moeda(valor)}</span></div>`).join("")}</div>`:""}<div class="card"><div class="toolbar" style="margin-top:0"><h3 style="margin:0">Produtos mais vendidos</h3><label class="field" style="min-width:210px"><span>Base de cálculo</span><select data-rel-top><option value="periodo" ${relTop==="periodo"?"selected":""}>Período selecionado</option><option value="tudo" ${relTop==="tudo"?"selected":""}>Todo o histórico</option></select></label></div>${ranking.length?`<div class="table-wrap"><table><thead><tr><th>#</th><th>Produto</th><th class="numeric">Qtd. vendida</th><th class="numeric">Receita (bruta)</th><th></th></tr></thead><tbody>${ranking.map((p,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(p.nome)}</td><td class="numeric">${p.qtd}</td><td class="numeric">${moeda(p.receita)}</td><td style="width:28%"><div class="bar-track"><div class="bar" style="width:${maxQtd?p.qtd/maxQtd*100:0}%"></div></div></td></tr>`).join("")}</tbody></table></div><p class="footer-note">A receita é calculada pelo preço dos itens, antes de descontos aplicados ao pedido.</p>`:'<div class="empty">Ainda não há vendas para listar.</div>'}</div>`;
 }
 function totalPedidoPdv(){return dados.pedidoPdv.reduce((total,item)=>total+n(item.precoUnitario)*n(item.quantidade),0)}
 function renderCardapio(){
@@ -538,11 +709,17 @@ async function comprimirImagemCardapio(arquivo){
 }
 function renderPdv(){
  const painel=$("#panel-pdv"),disponiveis=dados.fichas.filter(f=>f.publicadoPdv&&n(f.precoAtual)>0);
- const linhas=dados.pedidoPdv.map(item=>`<div class="pos-cart-line"><div><div class="pos-line-name">${escapeHtml(item.nome)}</div><div class="muted">${moeda(n(item.precoUnitario))} cada</div><div class="pos-line-controls"><button class="btn small" data-action="pdv-diminuir" data-id="${escapeHtml(item.fichaId)}" aria-label="Diminuir quantidade">−</button><span>${n(item.quantidade)}</span><button class="btn small" data-action="pdv-aumentar" data-id="${escapeHtml(item.fichaId)}" aria-label="Aumentar quantidade">+</button>${remocaoPdvPendente===item.fichaId?`<button class="btn small danger" data-action="pdv-confirmar-remocao" data-id="${escapeHtml(item.fichaId)}">Confirmar</button><button class="btn small" data-action="pdv-cancelar-remocao">Cancelar</button>`:`<button class="btn small danger" data-action="pdv-remover" data-id="${escapeHtml(item.fichaId)}">Remover</button>`}</div></div><div class="pos-line-total">${moeda(n(item.precoUnitario)*n(item.quantidade))}</div></div>`).join("");
+ const caixa=caixaAberto();
+ const linhas=dados.pedidoPdv.map(item=>{
+  if(!item.linhaId)item.linhaId=uid();
+  const lid=escapeHtml(item.linhaId);
+  return `<div class="pos-cart-line"><div><div class="pos-line-name">${escapeHtml(item.nome)}</div><div class="muted">${moeda(n(item.precoUnitario))} cada</div><div class="pos-line-controls"><button class="btn small" data-action="pdv-diminuir" data-id="${lid}" aria-label="Diminuir quantidade">−</button><span>${n(item.quantidade)}</span><button class="btn small" data-action="pdv-aumentar" data-id="${lid}" aria-label="Aumentar quantidade">+</button>${remocaoPdvPendente===item.linhaId?`<button class="btn small danger" data-action="pdv-confirmar-remocao" data-id="${lid}">Confirmar</button><button class="btn small" data-action="pdv-cancelar-remocao">Cancelar</button>`:`<button class="btn small danger" data-action="pdv-remover" data-id="${lid}">Remover</button>`}</div><input class="line-obs" type="text" maxlength="120" data-pdv-obs="${lid}" placeholder="Observação (ex.: sem cebola)" value="${escapeHtml(item.obs||"")}" aria-label="Observação do item"></div><div class="pos-line-total">${moeda(n(item.precoUnitario)*n(item.quantidade))}</div></div>`;
+ }).join("");
  const recentes=dados.vendasPdv.slice(-5).reverse().map(v=>`<div class="pos-recent-row"><span>Venda #${escapeHtml(v.numero)}${v.comanda?` · Comanda ${escapeHtml(v.comanda)}`:""} · ${escapeHtml(v.formaPagamento)}</span><strong>${moeda(n(v.total))}</strong></div>`).join("");
  const numero=String(dados.vendasPdv.length+1).padStart(6,"0");
  const limpezaPendente=remocaoPdvPendente==="__limpar__";
- painel.innerHTML=`<div class="pos-toolbar"><div><h2>PDV</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Atendimento")}</div></div><label class="field pos-search"><span>Buscar no cardápio</span><input type="search" data-pdv-search placeholder="Digite o nome do produto"></label></div><div class="pos-layout"><section class="pos-products" aria-label="Produtos disponíveis">${disponiveis.length?`<div class="pos-product-grid">${disponiveis.map(f=>`<button class="pos-product" type="button" data-action="pdv-adicionar" data-id="${escapeHtml(f.id)}" data-search="${escapeHtml(`${f.nome} ${f.categoria}`.toLocaleLowerCase("pt-BR"))}"><span class="pos-product-art">${f.imagemCardapio?`<img src="${escapeHtml(f.imagemCardapio)}" alt="">`:`<span>${escapeHtml(String(f.nome||"?").trim().slice(0,1).toLocaleUpperCase("pt-BR"))}</span>`}</span><span class="pos-product-name">${escapeHtml(f.nome||"Produto sem nome")}</span><span class="pos-product-category">${escapeHtml(f.categoria)}</span><span class="pos-product-price">${moeda(n(f.precoAtual))}</span></button>`).join("")}</div>`:'<div class="card empty">Nenhum produto está visível no PDV. Acesse Cardápio e ative o seletor de um produto com preço cadastrado.</div>'}</section><aside class="card pos-order"><div class="pos-order-head"><h2>Pedido #${numero}</h2>${limpezaPendente?'<span class="actions"><button class="btn small danger" data-action="pdv-confirmar-limpeza">Confirmar</button><button class="btn small" data-action="pdv-cancelar-remocao">Cancelar</button></span>':`<button class="btn small" data-action="pdv-limpar" ${dados.pedidoPdv.length?"":"disabled"}>Limpar pedido</button>`}</div><div class="pos-cart">${linhas||'<div class="empty">Adicione produtos do cardápio ao pedido.</div>'}</div><div class="pos-totals"><div class="pos-total-row"><span>Subtotal</span><strong>${moeda(totalPedidoPdv())}</strong></div><div class="pos-total-row final"><span>Total</span><strong>${moeda(totalPedidoPdv())}</strong></div></div><h3>Forma de pagamento</h3><div class="pos-payment-options">${["Dinheiro","Pix","Crédito","Débito"].map(m=>`<button class="btn ${pagamentoPdv===m?"selected":""}" type="button" data-action="pdv-pagamento" data-method="${m}">${m}</button>`).join("")}</div><button class="btn primary" style="width:100%" data-action="pdv-finalizar" ${dados.pedidoPdv.length?"":"disabled"}>Registrar venda · ${moeda(totalPedidoPdv())}</button><p class="footer-note">O registro não processa pagamentos; confirme o recebimento no meio escolhido.</p><div class="pos-comanda-box"><h3>Comanda</h3><label class="field"><span>Nome ou número da comanda</span><input type="text" data-comanda-input list="comandas-abertas" maxlength="40" autocomplete="off" placeholder="Ex.: Mesa 4, João, 12" value="${escapeHtml(comandaPdv)}"></label><datalist id="comandas-abertas">${dados.comandas.map(c=>`<option value="${escapeHtml(c.identificador)}"></option>`).join("")}</datalist><button class="btn" style="width:100%" type="button" data-action="pdv-enviar-comanda" ${dados.pedidoPdv.length?"":"disabled"}>Enviar para comanda</button><p class="footer-note">Se a comanda já estiver aberta, os itens são somados a ela. O pagamento é feito depois, na aba 1.1. Comanda.</p></div>${statusPdv?`<div class="notice" role="status">${escapeHtml(statusPdv)}</div>`:""}<h3>Vendas recentes</h3><div class="pos-recent">${recentes||'<span class="muted">Nenhuma venda registrada.</span>'}</div></aside></div>`;
+ const sub=totalPedidoPdv(),desc=calcDesconto(sub,descontoPdv),total=Math.round((sub-desc)*100)/100;
+ painel.innerHTML=`<div class="pos-toolbar"><div><h2>PDV</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Atendimento")}</div></div><label class="field pos-search"><span>Buscar no cardápio</span><input type="search" data-pdv-search placeholder="Digite o nome do produto"></label></div><div class="pos-layout"><section class="pos-products" aria-label="Produtos disponíveis">${disponiveis.length?`<div class="pos-product-grid">${disponiveis.map(f=>`<button class="pos-product" type="button" data-action="pdv-adicionar" data-id="${escapeHtml(f.id)}" data-search="${escapeHtml(`${f.nome} ${f.categoria}`.toLocaleLowerCase("pt-BR"))}"><span class="pos-product-art">${f.imagemCardapio?`<img src="${escapeHtml(f.imagemCardapio)}" alt="">`:`<span>${escapeHtml(String(f.nome||"?").trim().slice(0,1).toLocaleUpperCase("pt-BR"))}</span>`}</span><span class="pos-product-name">${escapeHtml(f.nome||"Produto sem nome")}</span><span class="pos-product-category">${escapeHtml(f.categoria)}</span><span class="pos-product-price">${moeda(n(f.precoAtual))}</span></button>`).join("")}</div>`:'<div class="card empty">Nenhum produto está visível no PDV. Acesse Cardápio e ative o seletor de um produto com preço cadastrado.</div>'}</section><aside class="card pos-order"><div class="pos-order-head"><h2>Pedido #${numero}</h2>${limpezaPendente?'<span class="actions"><button class="btn small danger" data-action="pdv-confirmar-limpeza">Confirmar</button><button class="btn small" data-action="pdv-cancelar-remocao">Cancelar</button></span>':`<button class="btn small" data-action="pdv-limpar" ${dados.pedidoPdv.length?"":"disabled"}>Limpar pedido</button>`}</div><div class="pos-cart">${linhas||'<div class="empty">Adicione produtos do cardápio ao pedido.</div>'}</div>${htmlDesconto("pdv",descontoPdv)}<div class="pos-totals"><div class="pos-total-row"><span>Subtotal</span><strong data-pdv-subtotal>${moeda(sub)}</strong></div><div class="pos-total-row" data-pdv-desconto-linha ${desc>0?"":"hidden"}><span>Desconto</span><strong data-pdv-desconto>− ${moeda(desc)}</strong></div><div class="pos-total-row final"><span>Total</span><strong data-pdv-total>${moeda(total)}</strong></div></div><h3>Forma de pagamento</h3><div class="pos-payment-options">${["Dinheiro","Pix","Crédito","Débito"].map(m=>`<button class="btn ${pagamentoPdv===m?"selected":""}" type="button" data-action="pdv-pagamento" data-method="${m}">${m}</button>`).join("")}</div><button class="btn primary" style="width:100%" data-action="pdv-finalizar" data-pdv-registrar ${dados.pedidoPdv.length&&caixa?"":"disabled"}>Registrar venda · ${moeda(total)}</button>${caixa?"":'<p class="notice warning">Caixa fechado. Abra o caixa na aba 1.2. Caixa para registrar vendas.</p>'}<p class="footer-note">O registro não processa pagamentos; confirme o recebimento no meio escolhido.</p><div class="pos-comanda-box"><h3>Comanda</h3><label class="field"><span>Nome ou número da comanda</span><input type="text" data-comanda-input list="comandas-abertas" maxlength="40" autocomplete="off" placeholder="Ex.: Mesa 4, João, 12" value="${escapeHtml(comandaPdv)}"></label><datalist id="comandas-abertas">${dados.comandas.map(c=>`<option value="${escapeHtml(c.identificador)}"></option>`).join("")}</datalist><button class="btn" style="width:100%" type="button" data-action="pdv-enviar-comanda" ${dados.pedidoPdv.length?"":"disabled"}>Enviar para comanda</button><p class="footer-note">Se a comanda já estiver aberta, os itens são somados a ela (o desconto informado acima também vai junto). O pagamento é feito depois, na aba 1.1. Comanda.</p></div>${statusPdv?`<div class="notice" role="status">${escapeHtml(statusPdv)}</div>`:""}<h3>Vendas recentes</h3><div class="pos-recent">${recentes||'<span class="muted">Nenhuma venda registrada.</span>'}</div></aside></div>`;
 }
 function renderTudo(){
  const renderers={insumos:renderInsumos,fichas:renderFichas,cmo:renderCmo,precificacao:renderPrecificacao,analise:renderAnalise};
@@ -552,6 +729,8 @@ function renderTudo(){
  }
    if(abaPermitida("pdv"))renderPdv();else $("#panel-pdv").innerHTML="";
    if(abaPermitida("comanda"))renderComanda();else $("#panel-comanda").innerHTML="";
+   if(abaPermitida("caixa"))renderCaixa();else $("#panel-caixa").innerHTML="";
+   if(abaPermitida("relatorio"))renderRelatorio();else $("#panel-relatorio").innerHTML="";
    if(abaPermitida("cardapio"))renderCardapio();else $("#panel-cardapio").innerHTML="";
  alternarAba(abaAtiva);
 }
@@ -562,6 +741,8 @@ function alternarAba(nome){
  $$(".module-panel").forEach(p=>p.classList.toggle("active",p.id===`panel-${nome}`));
  if(nome==="pdv")renderPdv();
  if(nome==="comanda")renderComanda();
+ if(nome==="caixa")renderCaixa();
+ if(nome==="relatorio")renderRelatorio();
  if(nome==="cardapio")renderCardapio();
  if(nome==="ficha-tecnica")alternarSubAba(subAbaAtiva);
 }
@@ -696,12 +877,26 @@ function gravarCampo(target,value){
  else if(row.dataset.ficha){const f=acharFicha(row.dataset.ficha);if(f)f[target.dataset.field]=target.dataset.field==="nome"||target.dataset.field==="categoria"||target.dataset.field==="margem"?value:target.dataset.field==="combo"?target.checked:n(value)}
  else if(row.dataset.item){const f=dados.fichas.find(x=>x.itens.some(i=>i.id===row.dataset.item)),it=f?.itens.find(i=>i.id===row.dataset.item);if(it)it[target.dataset.field]=target.dataset.field==="quantidade"?n(value):value}
 }
+document.addEventListener("change",e=>{
+ const t=e.target;
+ if(t.matches("[data-desc-tipo]")){aplicarDescontoDom(t);return}
+ if(t.matches("[data-rel-dia]")){if(t.value){relDia=t.value;renderRelatorio()}return}
+ if(t.matches("[data-rel-mesnum]")){relMesNum=Number(t.value)||relMesNum;renderRelatorio();return}
+ if(t.matches("[data-rel-ano]")){const a=Math.floor(n(t.value));if(a>=2000&&a<=2100){relAno=a;renderRelatorio()}return}
+ if(t.matches("[data-rel-top]")){relTop=t.value;renderRelatorio()}
+});
 document.addEventListener("keydown",e=>{
  if(e.key==="Enter"&&e.target.matches?.("[data-comanda-input]")){e.preventDefault();const botao=$('[data-action="pdv-enviar-comanda"]');if(botao&&!botao.disabled)botao.click()}
 });
 document.addEventListener("input",e=>{
  const t=e.target;
  if(t.matches("[data-comanda-input]")){comandaPdv=t.value;return}
+ if(t.matches("[data-pdv-obs]")){const item=dados.pedidoPdv.find(x=>x.linhaId===t.dataset.pdvObs);if(item){item.obs=t.value.slice(0,120);salvar()}return}
+ if(t.matches("[data-comanda-obs]")){const c=acharComanda(t.dataset.comanda),item=c?.itens.find(x=>x.linhaId===t.dataset.linha);if(item){item.obs=t.value.slice(0,120);salvar()}return}
+ if(t.matches("[data-desc-valor]")){aplicarDescontoDom(t);return}
+ if(t.matches("[data-caixa-fundo]")){fundoCaixa=t.value;return}
+ if(t.matches("[data-caixa-contado]")){contadoCaixa=t.value;atualizarDiferencaCaixa();return}
+ if(t.matches("[data-caixa-obs]")){obsCaixa=t.value;return}
  if(t.matches("[data-comanda-search]")){
    const termo=t.value.trim().toLocaleLowerCase("pt-BR");
    $$("[data-comanda-card]").forEach(card=>{card.hidden=!card.dataset.search.includes(termo)});
@@ -745,7 +940,7 @@ async function sairDaConta(texto){
   try{if(sessaoSupabase?.access_token)await chamadaRpc("app_logout",{p_token:sessaoSupabase.access_token})}
   catch(erro){console.warn("Não foi possível invalidar a sessão no banco.",erro)}
   clearInterval(temporizadorPolling);clearTimeout(temporizadorSync);
-  empresaSelecionada=null;empresasDisponiveis=[];ehAdmin=false;abasOcultas=[];statusPdv="";remocaoPdvPendente="";comandaPdv="";statusComanda="";confirmacaoComanda="";pagamentoComanda={};limparSessao();mostrarLogin(texto);
+  empresaSelecionada=null;empresasDisponiveis=[];ehAdmin=false;abasOcultas=[];statusPdv="";remocaoPdvPendente="";comandaPdv="";statusComanda="";confirmacaoComanda="";pagamentoComanda={};descontoPdv={tipo:"valor",valor:""};statusCaixa="";confirmacaoCaixa=false;limparSessao();mostrarLogin(texto);
 }
 $("#trocar-empresa").addEventListener("click",async()=>{
   if(sincronizacaoPendente){
@@ -792,7 +987,7 @@ $("#admin-user-list").addEventListener("submit",async e=>{
   const companyIds=$$("[data-user-company]:checked",form).map(input=>input.value);
   const hiddenTabs=$$("[data-user-tab]:checked",form).map(input=>input.value);
   if(!companyIds.length){status.textContent="Cada login precisa ter pelo menos uma empresa.";return}
-  if(["pdv","comanda","cardapio","producao","ficha-tecnica"].every(nome=>hiddenTabs.includes(nome))){status.textContent="Deixe pelo menos uma aba de trabalho visível para este login.";return}
+  if(["pdv","comanda","caixa","relatorio","cardapio","producao","ficha-tecnica"].every(nome=>hiddenTabs.includes(nome))){status.textContent="Deixe pelo menos uma aba de trabalho visível para este login.";return}
   botao.disabled=true;status.textContent="Salvando alterações…";
   try{
     const resultado=await chamadaRpc("app_admin_update_user",{
@@ -890,21 +1085,21 @@ document.addEventListener("click",e=>{
  if(act==="pdv-adicionar"){
    const produto=acharFicha(b.dataset.id);
    if(!produto||!produto.publicadoPdv||n(produto.precoAtual)<=0)return;
-   const item=dados.pedidoPdv.find(x=>x.fichaId===produto.id);
+   const item=dados.pedidoPdv.find(x=>x.fichaId===produto.id&&!String(x.obs||"").trim());
    if(item)item.quantidade++;
-   else dados.pedidoPdv.push({fichaId:produto.id,nome:produto.nome,precoUnitario:n(produto.precoAtual),quantidade:1});
+   else dados.pedidoPdv.push({linhaId:uid(),obs:"",fichaId:produto.id,nome:produto.nome,precoUnitario:n(produto.precoAtual),quantidade:1});
    statusPdv="";remocaoPdvPendente="";salvar();renderPdv();return;
  }
  if(act==="pdv-aumentar"||act==="pdv-diminuir"){
-   const item=dados.pedidoPdv.find(x=>x.fichaId===b.dataset.id);
+   const item=dados.pedidoPdv.find(x=>x.linhaId===b.dataset.id);
    if(item){item.quantidade=Math.max(1,item.quantidade+(act==="pdv-aumentar"?1:-1));salvar();renderPdv()}
    return;
  }
  if(act==="pdv-remover"){remocaoPdvPendente=b.dataset.id;renderPdv();return}
- if(act==="pdv-confirmar-remocao"){dados.pedidoPdv=dados.pedidoPdv.filter(x=>x.fichaId!==b.dataset.id);remocaoPdvPendente="";salvar();renderPdv();return}
+ if(act==="pdv-confirmar-remocao"){dados.pedidoPdv=dados.pedidoPdv.filter(x=>x.linhaId!==b.dataset.id);remocaoPdvPendente="";if(!dados.pedidoPdv.length)descontoPdv={tipo:"valor",valor:""};salvar();renderPdv();return}
  if(act==="pdv-cancelar-remocao"){remocaoPdvPendente="";renderPdv();return}
  if(act==="pdv-limpar"){remocaoPdvPendente="__limpar__";renderPdv();return}
- if(act==="pdv-confirmar-limpeza"){dados.pedidoPdv=[];remocaoPdvPendente="";statusPdv="Pedido limpo.";salvar();renderPdv();return}
+ if(act==="pdv-confirmar-limpeza"){dados.pedidoPdv=[];remocaoPdvPendente="";descontoPdv={tipo:"valor",valor:""};statusPdv="Pedido limpo.";salvar();renderPdv();return}
  if(act==="pdv-pagamento"){pagamentoPdv=b.dataset.method;renderPdv();return}
  if(act==="pdv-enviar-comanda"){
    if(!dados.pedidoPdv.length)return;
@@ -912,14 +1107,17 @@ document.addEventListener("click",e=>{
    if(!rotulo){statusPdv="Informe o nome ou o número da comanda.";renderPdv();return}
    let comanda=dados.comandas.find(c=>chaveComanda(c.identificador)===chaveComanda(rotulo));
    const existente=Boolean(comanda);
-   if(!comanda){comanda={id:uid(),identificador:rotulo,criadaEm:new Date().toISOString(),itens:[]};dados.comandas.push(comanda)}
+   if(!comanda){comanda={id:uid(),identificador:rotulo,criadaEm:new Date().toISOString(),desconto:{tipo:"valor",valor:""},itens:[]};dados.comandas.push(comanda)}
    for(const item of dados.pedidoPdv){
-     const igual=comanda.itens.find(x=>x.fichaId===item.fichaId&&n(x.precoUnitario)===n(item.precoUnitario));
+     const obs=String(item.obs||"").trim();
+     const igual=comanda.itens.find(x=>x.fichaId===item.fichaId&&n(x.precoUnitario)===n(item.precoUnitario)&&String(x.obs||"").trim()===obs);
      if(igual)igual.quantidade+=item.quantidade;
-     else comanda.itens.push({linhaId:uid(),fichaId:item.fichaId,nome:item.nome,precoUnitario:item.precoUnitario,quantidade:item.quantidade});
+     else comanda.itens.push({linhaId:uid(),obs,fichaId:item.fichaId,nome:item.nome,precoUnitario:item.precoUnitario,quantidade:item.quantidade});
    }
-   dados.pedidoPdv=[];comandaPdv="";remocaoPdvPendente="";
-   statusPdv=existente?`Itens adicionados à comanda ${comanda.identificador}.`:`Comanda ${comanda.identificador} criada com o pedido.`;
+   const comDesconto=n(descontoPdv.valor)>0;
+   if(comDesconto)comanda.desconto=normalizarDesconto(descontoPdv);
+   dados.pedidoPdv=[];comandaPdv="";remocaoPdvPendente="";descontoPdv={tipo:"valor",valor:""};
+   statusPdv=(existente?`Itens adicionados à comanda ${comanda.identificador}.`:`Comanda ${comanda.identificador} criada com o pedido.`)+(comDesconto?" Desconto aplicado à comanda.":"");
    salvar();renderPdv();if(abaPermitida("comanda"))renderComanda();return;
  }
  if(act&&act.startsWith("comanda-")){
@@ -941,19 +1139,45 @@ document.addEventListener("click",e=>{
    }
    if(act==="comanda-fechar"&&c){
      if(!c.itens.length)return;
-     const total=totalComanda(c);
-     const venda={id:uid(),numero:String(dados.vendasPdv.length+1).padStart(6,"0"),dataHora:new Date().toISOString(),empresa:empresaSelecionada?.name||"Dados locais",formaPagamento:pagamentoComanda[c.id]||"Pix",subtotal:total,total,comanda:c.identificador,itens:c.itens.map(({fichaId,nome,precoUnitario,quantidade})=>({fichaId,nome,precoUnitario,quantidade}))};
+     const caixa=caixaAberto();
+     if(!caixa){statusComanda="Abra o caixa na aba 1.2. Caixa antes de registrar vendas.";renderComanda();return}
+     const subtotal=totalComanda(c),desconto=calcDesconto(subtotal,c.desconto),total=arred(subtotal-desconto);
+     const venda={id:uid(),numero:String(dados.vendasPdv.length+1).padStart(6,"0"),dataHora:new Date().toISOString(),empresa:empresaSelecionada?.name||"Dados locais",formaPagamento:pagamentoComanda[c.id]||"Pix",subtotal,desconto,total,caixaId:caixa.id,comanda:c.identificador,itens:c.itens.map(({fichaId,nome,precoUnitario,quantidade,obs})=>({fichaId,nome,precoUnitario,quantidade,obs:obs||""}))};
      dados.vendasPdv.push(venda);dados.comandas=dados.comandas.filter(x=>x.id!==c.id);delete pagamentoComanda[c.id];confirmacaoComanda="";
      statusComanda=`Comanda ${c.identificador} fechada: venda #${venda.numero} registrada. Confira o recebimento do pagamento.`;
-     salvar();renderComanda();if(abaPermitida("pdv"))renderPdv();return;
+     salvar();renderComanda();if(abaPermitida("pdv"))renderPdv();if(abaPermitida("caixa"))renderCaixa();return;
    }
    return;
  }
  if(act==="pdv-finalizar"){
    if(!dados.pedidoPdv.length)return;
-   const venda={id:uid(),numero:String(dados.vendasPdv.length+1).padStart(6,"0"),dataHora:new Date().toISOString(),empresa:empresaSelecionada?.name||"Dados locais",formaPagamento:pagamentoPdv,subtotal:totalPedidoPdv(),total:totalPedidoPdv(),itens:dados.pedidoPdv.map(item=>({...item}))};
-   dados.vendasPdv.push(venda);dados.pedidoPdv=[];remocaoPdvPendente="";statusPdv=`Venda #${venda.numero} registrada no histórico. Confira o recebimento do pagamento.`;salvar();renderPdv();return;
+   const caixa=caixaAberto();
+   if(!caixa){statusPdv="Abra o caixa na aba 1.2. Caixa antes de registrar vendas.";renderPdv();return}
+   const subtotal=totalPedidoPdv(),desconto=calcDesconto(subtotal,descontoPdv),total=arred(subtotal-desconto);
+   const venda={id:uid(),numero:String(dados.vendasPdv.length+1).padStart(6,"0"),dataHora:new Date().toISOString(),empresa:empresaSelecionada?.name||"Dados locais",formaPagamento:pagamentoPdv,subtotal,desconto,total,caixaId:caixa.id,itens:dados.pedidoPdv.map(({fichaId,nome,precoUnitario,quantidade,obs})=>({fichaId,nome,precoUnitario,quantidade,obs:String(obs||"").trim()}))};
+   dados.vendasPdv.push(venda);dados.pedidoPdv=[];remocaoPdvPendente="";descontoPdv={tipo:"valor",valor:""};
+   statusPdv=`Venda #${venda.numero} registrada no histórico. Confira o recebimento do pagamento.`;salvar();renderPdv();if(abaPermitida("caixa"))renderCaixa();return;
  }
+ if(act==="caixa-abrir"){
+   if(caixaAberto())return;
+   dados.caixas.push({id:uid(),abertoEm:new Date().toISOString(),abertoPor:sessaoSupabase?.username||"local",fundoInicial:Math.max(0,n(fundoCaixa)),fechadoEm:null});
+   fundoCaixa="";statusCaixa="Caixa aberto. Já é possível registrar vendas.";salvar();renderModulosVenda();return;
+ }
+ if(act==="caixa-fechar"){
+   if(!caixaAberto())return;
+   if(String(contadoCaixa).trim()===""){statusCaixa="Informe o dinheiro contado no caixa antes de fechar.";confirmacaoCaixa=false;renderCaixa();return}
+   statusCaixa="";confirmacaoCaixa=true;renderCaixa();return;
+ }
+ if(act==="caixa-cancelar-fechamento"){confirmacaoCaixa=false;renderCaixa();return}
+ if(act==="caixa-confirmar-fechar"){
+   const caixa=caixaAberto();if(!caixa)return;
+   const r=resumoCaixa(caixa),contado=Math.max(0,n(contadoCaixa));
+   Object.assign(caixa,{fechadoEm:new Date().toISOString(),fechadoPor:sessaoSupabase?.username||"local",dinheiroContado:contado,diferenca:arred(contado-r.dinheiroEsperado),observacao:obsCaixa.trim().slice(0,200),resumo:r});
+   statusCaixa=`Caixa fechado. Total vendido: ${moeda(r.total)}. Diferença no dinheiro: ${moeda(caixa.diferenca)}.`;
+   contadoCaixa="";obsCaixa="";confirmacaoCaixa=false;salvar();renderModulosVenda();return;
+ }
+ if(act==="rel-tipo"){relTipo=b.dataset.valor;renderRelatorio();return}
+ if(act==="rel-metrica"){relMetrica=b.dataset.valor;renderRelatorio();return}
  if(act==="menu-remover-foto"){
    const produto=acharFicha(b.dataset.id);
    if(produto){delete produto.imagemCardapio;salvar();renderCardapio()}
