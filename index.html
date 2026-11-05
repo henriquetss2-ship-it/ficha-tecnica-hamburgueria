@@ -166,6 +166,7 @@ const SUPABASE_URL = "https://emphwdwkdoosdchwefmf.supabase.co";
 const SUPABASE_PUBLIC_KEY = "sb_publishable_5GWJrfCbsHXI4AVkIvJ6Dg_v3vnbdub";
 const TABELA_EMPRESAS = "companies";
 const CATEGORIAS_PADRAO = ["Lanche", "Bebida", "Porções", "Almoço", "Sobremesa", "Combo"];
+const TIPOS_PRODUTO = [["acabado","Produto acabado"],["combo","Combo"],["semiacabado","Produto semi-acabado"]];
 const ABAS = [
   ["pdv", "1. PDV"],
   ["comanda", "1.1. Comanda"],
@@ -273,13 +274,16 @@ function normalizarDados(obj){
   });
   normalizado.fichas.forEach(f=>{
     f.publicadoPdv=f.publicadoPdv===true;
+    f.tipoProduto=TIPOS_PRODUTO.some(([tipo])=>tipo===f.tipoProduto)?f.tipoProduto:(f.combo?"combo":"acabado");
+    f.combo=f.tipoProduto==="combo";
+    f.unidadeSemiAcabado=UNIDADES.includes(f.unidadeSemiAcabado)?f.unidadeSemiAcabado:"un";
     f.modoEstoque=["insumos","produto-pronto"].includes(f.modoEstoque)?f.modoEstoque:"empresa";
     f.estoqueAtual=Math.max(0,n(f.estoqueAtual));
     f.estoqueMinimo=Math.max(0,n(f.estoqueMinimo));
     f.estoqueAlvo=Math.max(f.estoqueMinimo,n(f.estoqueAlvo));
   });
   const fichasPorId=new Map(normalizado.fichas.map(f=>[f.id,f]));
-  normalizado.pedidoPdv=normalizado.pedidoPdv.filter(item=>fichasPorId.has(item.fichaId)&&n(item.quantidade)>0).map(item=>({
+  normalizado.pedidoPdv=normalizado.pedidoPdv.filter(item=>fichasPorId.has(item.fichaId)&&fichasPorId.get(item.fichaId).tipoProduto!=="semiacabado"&&n(item.quantidade)>0).map(item=>({
     linhaId:String(item.linhaId||uid()),obs:String(item.obs||"").slice(0,120),fichaId:item.fichaId,nome:String(item.nome||fichasPorId.get(item.fichaId).nome),
     precoUnitario:Math.max(0,n(item.precoUnitario)),quantidade:Math.max(1,Math.floor(n(item.quantidade)))
   }));
@@ -289,7 +293,7 @@ function normalizarDados(obj){
   normalizado.categorias=[...new Set(categorias)];
   normalizado.categoriaCombo=normalizado.categorias.includes(obj.categoriaCombo)?obj.categoriaCombo:normalizado.categorias.includes("Combo")?"Combo":normalizado.categorias[0];
   if(!normalizado.categorias.length){normalizado.categorias=[...CATEGORIAS_PADRAO];normalizado.categoriaCombo="Combo"}
-  if(normalizado.categoriaFiltro!=="Todas"&&!normalizado.categorias.includes(normalizado.categoriaFiltro))normalizado.categoriaFiltro="Todas";
+  if(normalizado.categoriaFiltro!=="Todas"&&!TIPOS_PRODUTO.some(([tipo])=>tipo===normalizado.categoriaFiltro))normalizado.categoriaFiltro="Todas";
   return normalizado;
 }
 function categoriasEmpresa(){return dados.categorias}
@@ -572,7 +576,38 @@ function modoEstoqueEmpresa(){
 function modoEstoqueFicha(ficha){
  return ficha?.modoEstoque==="insumos"||ficha?.modoEstoque==="produto-pronto"?ficha.modoEstoque:modoEstoqueEmpresa();
 }
-function custoInsumo(insumo){return insumo&&n(insumo.quantidade)>0?n(insumo.preco)/n(insumo.quantidade):0}
+function custoInsumo(insumo){
+ const semi=fichaSemiAcabado(insumo);
+ return semi?cmvFicha(semi):insumo&&n(insumo.quantidade)>0?n(insumo.preco)/n(insumo.quantidade):0;
+}
+function fichaSemiAcabado(insumo){return insumo?.semiAcabadoFichaId?acharFicha(insumo.semiAcabadoFichaId):null}
+function sincronizarInsumosSemiAcabados(){
+ let mudou=false;
+ for(const ficha of dados.fichas.filter(f=>f.tipoProduto==="semiacabado")){
+  let insumo=dados.insumos.find(i=>i.semiAcabadoFichaId===ficha.id);
+  if(!insumo&&ficha.insumoSemiAcabadoId){
+   const vinculado=acharInsumo(ficha.insumoSemiAcabadoId);
+   if(vinculado?.semiAcabadoFichaId===ficha.id)insumo=vinculado;
+  }
+  if(!insumo){
+   insumo={id:uid(),semiAcabadoFichaId:ficha.id,nome:ficha.nome||"Semi-acabado",unidade:ficha.unidadeSemiAcabado||"un",preco:0,quantidade:1,estoqueAtual:0,estoqueMinimo:0,estoqueAlvo:0};
+   dados.insumos.push(insumo);ficha.insumoSemiAcabadoId=insumo.id;mudou=true;
+  }else if(ficha.insumoSemiAcabadoId!==insumo.id){ficha.insumoSemiAcabadoId=insumo.id;mudou=true}
+  const nome=ficha.nome||"Semi-acabado",unidade=ficha.unidadeSemiAcabado||"un",preco=cmvFicha(ficha);
+  if(insumo.nome!==nome||insumo.unidade!==unidade||insumo.preco!==preco||insumo.quantidade!==1||insumo.fichaSemiAcabadoId!==ficha.id){
+   Object.assign(insumo,{nome,unidade,preco,quantidade:1,fichaSemiAcabadoId:ficha.id});mudou=true;
+  }
+ }
+ const idsSemi=new Set(dados.fichas.filter(f=>f.tipoProduto==="semiacabado").map(f=>f.id));
+ const removidos=dados.insumos.filter(i=>i.semiAcabadoFichaId&&!idsSemi.has(i.semiAcabadoFichaId));
+ if(removidos.length){
+  const ids=new Set(removidos.map(i=>i.id));
+  dados.insumos=dados.insumos.filter(i=>!ids.has(i.id));
+  dados.fichas.forEach(f=>f.itens=f.itens.filter(item=>item.tipo!=="insumo"||!ids.has(item.referencia)));
+  mudou=true;
+ }
+ return mudou;
+}
 function fatorConversao(origem,destino){
   if(origem===destino)return 1;
   const grupos={g:{"kg":1000},kg:{"g":.001},ml:{"L":1000},L:{"ml":.001},un:{}};
@@ -617,6 +652,7 @@ function necessidadesVenda(itens){
  for(const linha of itens||[]){
   const ficha=acharFicha(linha.fichaId);
   if(!ficha)throw new Error(`O produto “${linha.nome||"sem nome"}” não está mais cadastrado.`);
+  if(ficha.tipoProduto==="semiacabado")throw new Error(`O semi-acabado “${ficha.nome}” é um insumo de produção e não pode ser vendido diretamente.`);
   const quantidade=Math.max(0,n(linha.quantidade));
   if(!quantidade)throw new Error(`Quantidade inválida para “${ficha.nome}”.`);
   if(modoEstoqueFicha(ficha)==="produto-pronto"){
@@ -655,7 +691,9 @@ function custoItem(item,stack=[]){
     if(!ficha||stack.includes(ficha.id))return 0;
     return n(item.quantidade)*cmvFicha(ficha,stack);
   }
-  const insumo=acharInsumo(item.referencia),base=custoInsumo(insumo);
+  const insumo=acharInsumo(item.referencia),semi=fichaSemiAcabado(insumo);
+  if(semi&&stack.includes(semi.id))return 0;
+  const base=semi?cmvFicha(semi,stack):custoInsumo(insumo);
   if(!insumo)return 0;
   const fator=fatorConversao(insumo.unidade,item.unidade);
   return fator?Math.round(base*n(item.quantidade)*fator*100)/100:0;
@@ -848,7 +886,8 @@ function renderRelatorio(){
 function totalPedidoPdv(){return dados.pedidoPdv.reduce((total,item)=>total+n(item.precoUnitario)*n(item.quantidade),0)}
 function renderCardapio(){
  const painel=$("#panel-cardapio");
- painel.innerHTML=`<div class="toolbar"><div><h2>Cardápio</h2><div class="muted">Escolha quais fichas técnicas estarão disponíveis no PDV, confira o preço e defina como cada produto controla estoque.</div></div><label class="field pos-search"><span>Buscar produto</span><input type="search" data-menu-search placeholder="Nome ou categoria"></label></div>${dados.fichas.length?`<div class="menu-grid">${dados.fichas.map(f=>`<article class="card menu-product" data-menu-card data-name="${escapeHtml(f.nome)}" data-category="${escapeHtml(f.categoria)}"><div class="menu-product-head"><div><h3>${escapeHtml(f.nome||"Produto sem nome")}</h3><span class="pill">${escapeHtml(f.categoria)}</span>${f.combo?'<span class="pill">Combo</span>':""}</div><span class="muted">CMV ${moeda(cmvFicha(f))}</span></div><div class="menu-product-photo">${f.imagemCardapio?`<img src="${escapeHtml(f.imagemCardapio)}" alt="Foto de ${escapeHtml(f.nome)}">`:escapeHtml(String(f.nome||"?").trim().slice(0,1).toLocaleUpperCase("pt-BR"))}</div><div class="actions"><label class="btn small">Adicionar foto<input type="file" accept="image/png,image/jpeg,image/webp" data-menu-image="${escapeHtml(f.id)}" hidden></label>${f.imagemCardapio?`<button class="btn small" type="button" data-action="menu-remover-foto" data-id="${escapeHtml(f.id)}">Remover foto</button>`:""}</div><label class="field"><span>Preço de venda (R$)</span><input type="number" min="0" step="0.01" data-menu-price="${escapeHtml(f.id)}" value="${n(f.precoAtual)>0?escapeHtml(f.precoAtual):""}" placeholder="Defina o preço"></label><label class="field"><span>Consumo de estoque</span><select data-menu-stock-mode="${escapeHtml(f.id)}"><option value="empresa" ${f.modoEstoque==="empresa"?"selected":""}>Usar padrão da empresa</option><option value="insumos" ${f.modoEstoque==="insumos"?"selected":""}>Baixar ingredientes na venda</option><option value="produto-pronto" ${f.modoEstoque==="produto-pronto"?"selected":""}>Baixar produto pronto / usar OP</option></select></label><div class="muted prod-small">Modo atual: ${modoEstoqueFicha(f)==="insumos"?"ingredientes na venda":"produto pronto e reposição por OP"}</div><label class="switch-line"><input class="switch" type="checkbox" data-pdv-visible="${escapeHtml(f.id)}" ${f.publicadoPdv?"checked":""} ${n(f.precoAtual)>0?"":"disabled"}><span>${f.publicadoPdv?"Visível no PDV":"Mostrar no PDV"}</span></label>${n(f.precoAtual)>0?"":'<span class="muted">Informe um preço positivo para ativar no PDV.</span>'}</article>`).join("")}</div>`:'<div class="card empty">Cadastre primeiro as fichas técnicas que deseja vender.</div>'}`;
+ const vendaveis=dados.fichas.filter(f=>f.tipoProduto!=="semiacabado");
+ painel.innerHTML=`<div class="toolbar"><div><h2>Cardápio</h2><div class="muted">Escolha quais fichas técnicas estarão disponíveis no PDV, confira o preço e defina como cada produto controla estoque.</div></div><label class="field pos-search"><span>Buscar produto</span><input type="search" data-menu-search placeholder="Nome ou categoria"></label></div>${vendaveis.length?`<div class="menu-grid">${vendaveis.map(f=>`<article class="card menu-product" data-menu-card data-name="${escapeHtml(f.nome)}" data-category="${escapeHtml(f.categoria)}"><div class="menu-product-head"><div><h3>${escapeHtml(f.nome||"Produto sem nome")}</h3><span class="pill">${escapeHtml(f.categoria)}</span>${f.combo?'<span class="pill">Combo</span>':""}</div><span class="muted">CMV ${moeda(cmvFicha(f))}</span></div><div class="menu-product-photo">${f.imagemCardapio?`<img src="${escapeHtml(f.imagemCardapio)}" alt="Foto de ${escapeHtml(f.nome)}">`:escapeHtml(String(f.nome||"?").trim().slice(0,1).toLocaleUpperCase("pt-BR"))}</div><div class="actions"><label class="btn small">Adicionar foto<input type="file" accept="image/png,image/jpeg,image/webp" data-menu-image="${escapeHtml(f.id)}" hidden></label>${f.imagemCardapio?`<button class="btn small" type="button" data-action="menu-remover-foto" data-id="${escapeHtml(f.id)}">Remover foto</button>`:""}</div><label class="field"><span>Preço de venda (R$)</span><input type="number" min="0" step="0.01" data-menu-price="${escapeHtml(f.id)}" value="${n(f.precoAtual)>0?escapeHtml(f.precoAtual):""}" placeholder="Defina o preço"></label><label class="field"><span>Consumo de estoque</span><select data-menu-stock-mode="${escapeHtml(f.id)}"><option value="empresa" ${f.modoEstoque==="empresa"?"selected":""}>Usar padrão da empresa</option><option value="insumos" ${f.modoEstoque==="insumos"?"selected":""}>Baixar ingredientes na venda</option><option value="produto-pronto" ${f.modoEstoque==="produto-pronto"?"selected":""}>Baixar produto pronto / usar OP</option></select></label><div class="muted prod-small">Modo atual: ${modoEstoqueFicha(f)==="insumos"?"ingredientes na venda":"produto pronto e reposição por OP"}</div><label class="switch-line"><input class="switch" type="checkbox" data-pdv-visible="${escapeHtml(f.id)}" ${f.publicadoPdv?"checked":""} ${n(f.precoAtual)>0?"":"disabled"}><span>${f.publicadoPdv?"Visível no PDV":"Mostrar no PDV"}</span></label>${n(f.precoAtual)>0?"":'<span class="muted">Informe um preço positivo para ativar no PDV.</span>'}</article>`).join("")}</div>`:'<div class="card empty">${dados.fichas.some(f=>f.tipoProduto==="semiacabado")?"Cadastre produtos acabados ou combos para disponibilizar no PDV.":"Cadastre primeiro as fichas técnicas que deseja vender."}</div>'}`;
 }
 function vendasPorFicha(periodoMs){
  const corte=Date.now()-periodoMs,mapa=new Map();
@@ -858,9 +897,19 @@ function vendasPorFicha(periodoMs){
  }
  return mapa;
 }
-function itensInsumoBaixo(){return dados.insumos.filter(abaixoEstoqueMinimo)}
-function fichasProdutoPronto(){return dados.fichas.filter(f=>modoEstoqueFicha(f)==="produto-pronto")}
+function itensInsumoBaixo(){return dados.insumos.filter(i=>!i.semiAcabadoFichaId&&abaixoEstoqueMinimo(i))}
+function fichasVendaveis(){return dados.fichas.filter(f=>f.tipoProduto!=="semiacabado")}
+function fichasComOrdemProducao(){return dados.fichas.filter(f=>f.tipoProduto==="semiacabado"||modoEstoqueFicha(f)==="produto-pronto")}
+function fichasProdutoPronto(){return dados.fichas.filter(f=>f.tipoProduto!=="semiacabado"&&modoEstoqueFicha(f)==="produto-pronto")}
 function fichasProdutoBaixo(){return fichasProdutoPronto().filter(abaixoEstoqueMinimo)}
+function fichasSemiAcabadoBaixo(){
+ return dados.fichas.filter(f=>f.tipoProduto==="semiacabado").filter(f=>{const insumo=acharInsumo(f.insumoSemiAcabadoId);return insumo&&abaixoEstoqueMinimo(insumo)});
+}
+function fichaSemiAcabadoUsado(ficha){
+ const insumoId=ficha.insumoSemiAcabadoId||dados.insumos.find(i=>i.semiAcabadoFichaId===ficha.id)?.id;
+ const insumo=insumoId?acharInsumo(insumoId):null;
+ return Boolean(insumoId&&(n(insumo?.estoqueAtual)>0||dados.movimentosEstoque.some(m=>m.tipo==="insumo"&&m.referencia===insumoId)||dados.fichas.some(f=>f.id!==ficha.id&&f.itens.some(item=>item.tipo==="insumo"&&item.referencia===insumoId))));
+}
 function quantidadeCompraPendente(insumoId){
  return dados.pedidosCompra.filter(p=>p.status==="rascunho").flatMap(p=>p.itens||[]).filter(i=>i.insumoId===insumoId).reduce((s,i)=>s+n(i.quantidade),0);
 }
@@ -868,11 +917,11 @@ function quantidadeCompraSugerida(insumo){
  return Math.max(0,arredQuantidade(quantidadeReposicao(insumo)-quantidadeCompraPendente(insumo.id)));
 }
 function criarOrdemProducao(fichaId,quantidade){
- const ficha=acharFicha(fichaId),q=Math.floor(n(quantidade));
- if(!ficha||modoEstoqueFicha(ficha)!=="produto-pronto")throw new Error("Escolha um produto configurado para controle de produto pronto.");
- if(q<1)throw new Error("Informe uma quantidade de produção maior que zero.");
- dados.ordensProducao.unshift({id:uid(),numero:String(dados.ordensProducao.length+1).padStart(5,"0"),fichaId:ficha.id,nome:ficha.nome||"Produto",quantidade:q,status:"rascunho",criadaEm:new Date().toISOString(),criadaPor:sessaoSupabase?.username||"local",consumos:[]});
- statusProducao=`OP criada para ${q} un de ${ficha.nome}. O estoque só será baixado ao iniciar a produção.`;
+ const ficha=acharFicha(fichaId),q=arredQuantidade(n(quantidade));
+ if(!ficha||!(ficha.tipoProduto==="semiacabado"||modoEstoqueFicha(ficha)==="produto-pronto"))throw new Error("Escolha um produto acabado configurado para OP ou um semi-acabado.");
+ if(!(q>0)||ficha.tipoProduto!=="semiacabado"&&!Number.isInteger(q))throw new Error(ficha.tipoProduto==="semiacabado"?"Informe um rendimento maior que zero.":"Informe uma quantidade inteira maior que zero.");
+ dados.ordensProducao.unshift({id:uid(),numero:String(dados.ordensProducao.length+1).padStart(5,"0"),fichaId:ficha.id,nome:ficha.nome||"Produto",quantidade:q,unidade:ficha.tipoProduto==="semiacabado"?ficha.unidadeSemiAcabado||"un":"un",tipoProduto:ficha.tipoProduto,status:"rascunho",criadaEm:new Date().toISOString(),criadaPor:sessaoSupabase?.username||"local",consumos:[]});
+ statusProducao=`OP criada para ${q} ${ficha.tipoProduto==="semiacabado"?ficha.unidadeSemiAcabado||"un":"un"} de ${ficha.nome}. O estoque só será baixado ao iniciar a produção.`;
  salvar();alternarSubAbaProducao("ordens");
 }
 function iniciarOrdemProducao(id){
@@ -880,7 +929,7 @@ function iniciarOrdemProducao(id){
  if(!ordem||ordem.status!=="rascunho")return;
  try{
   const ficha=acharFicha(ordem.fichaId);
-  if(!ficha||modoEstoqueFicha(ficha)!=="produto-pronto")throw new Error("A ficha foi removida ou não está mais configurada para produzir estoque pronto.");
+  if(!ficha||!(ficha.tipoProduto==="semiacabado"||modoEstoqueFicha(ficha)==="produto-pronto"))throw new Error("A ficha foi removida ou não está configurada para produzir estoque por OP.");
   const necessidades=expandirNecessidadesFicha(ficha,ordem.quantidade);
   aplicarBaixaEstoque(necessidades,"ordem_producao",ordem.id);
   ordem.consumos=[
@@ -897,9 +946,13 @@ function concluirOrdemProducao(id){
  if(!ordem||ordem.status!=="em_producao")return;
  const ficha=acharFicha(ordem.fichaId);
  if(!ficha){statusProducao="A ficha da OP foi removida. A ordem não foi concluída; restaure a ficha antes de continuar.";alternarSubAbaProducao("ordens");return}
- registrarMovimento("produto",ficha.id,n(ordem.quantidade),"conclusao_op",ordem.id,`OP #${ordem.numero}`);
+ if(ficha.tipoProduto==="semiacabado"){
+  sincronizarInsumosSemiAcabados();
+  if(!acharInsumo(ficha.insumoSemiAcabadoId)){statusProducao="Não foi possível localizar o insumo vinculado ao semi-acabado.";alternarSubAbaProducao("ordens");return}
+  registrarMovimento("insumo",ficha.insumoSemiAcabadoId,n(ordem.quantidade),"conclusao_op",ordem.id,`OP #${ordem.numero}`);
+ }else registrarMovimento("produto",ficha.id,n(ordem.quantidade),"conclusao_op",ordem.id,`OP #${ordem.numero}`);
  ordem.status="concluida";ordem.concluidaEm=new Date().toISOString();ordem.concluidaPor=sessaoSupabase?.username||"local";
- statusProducao=`OP #${ordem.numero} concluída. ${ordem.quantidade} un adicionadas ao estoque de ${ficha.nome}.`;
+ statusProducao=`OP #${ordem.numero} concluída. ${ordem.quantidade} ${ficha.tipoProduto==="semiacabado"?ficha.unidadeSemiAcabado||"un":"un"} adicionadas ao estoque de ${ficha.nome}.`;
  confirmacaoOrdemPendente="";salvar();alternarSubAbaProducao("ordens");
 }
 function registrarPerdaOrdem(id){
@@ -927,19 +980,20 @@ function gerarPedidoCompraBaixo(){
  salvar();alternarSubAbaProducao("compras");
 }
 function renderProducaoPainel(){
- const p=$("#panel-producao-painel"),baixos=itensInsumoBaixo(),produtosBaixos=fichasProdutoBaixo(),abertas=dados.ordensProducao.filter(o=>o.status==="em_producao").length,rascunhos=dados.ordensProducao.filter(o=>o.status==="rascunho").length;
+ const p=$("#panel-producao-painel"),baixos=itensInsumoBaixo(),produtosBaixos=fichasProdutoBaixo(),semiBaixos=fichasSemiAcabadoBaixo(),abertas=dados.ordensProducao.filter(o=>o.status==="em_producao").length,rascunhos=dados.ordensProducao.filter(o=>o.status==="rascunho").length;
  const vendas=vendasPorFicha(24*60*60*1000),sugestoes=produtosBaixos.map(f=>({ficha:f,qtd:Math.max(1,Math.ceil(Math.max(n(f.estoqueAlvo)-n(f.estoqueAtual),(vendas.get(f.id)||0)-n(f.estoqueAtual))))}));
- p.innerHTML=`<div class="toolbar"><div><h2>Painel de produção</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Empresa")} · alertas de estoque e vendas atualizados no estado compartilhado.</div></div></div><div class="card"><div class="prod-grid"><div class="prod-kpi"><span>OP em andamento</span><strong>${abertas}</strong></div><div class="prod-kpi"><span>OP em rascunho</span><strong>${rascunhos}</strong></div><div class="prod-kpi"><span>Insumos abaixo do mínimo</span><strong>${baixos.length}</strong></div><div class="prod-kpi"><span>Produtos prontos abaixo do mínimo</span><strong>${produtosBaixos.length}</strong></div></div></div>${statusProducao?`<div class="notice" role="status">${escapeHtml(statusProducao)}</div>`:""}<div class="card"><div class="toolbar"><div><h3>Alertas de estoque</h3><p class="muted">Os insumos baixos geram sugestões de compra; produtos prontos baixos geram sugestões de OP, sem iniciar a produção automaticamente.</p></div><button class="btn primary" type="button" data-action="prod-gerar-pedido" ${baixos.some(i=>quantidadeCompraSugerida(i)>0)?"":"disabled"}>Gerar pedido de compra</button></div>${baixos.length?`<h4>Insumos comprados</h4><div class="table-wrap"><table><thead><tr><th>Insumo</th><th class="numeric">Saldo</th><th class="numeric">Mínimo</th><th class="numeric">Comprar</th></tr></thead><tbody>${baixos.map(i=>`<tr><td>${escapeHtml(i.nome)}</td><td class="numeric">${fmt(n(i.estoqueAtual),3)} ${escapeHtml(i.unidade)}</td><td class="numeric">${fmt(n(i.estoqueMinimo),3)} ${escapeHtml(i.unidade)}</td><td class="numeric">${fmt(quantidadeCompraSugerida(i),3)} ${escapeHtml(i.unidade)}</td></tr>`).join("")}</tbody></table></div>`:'<p class="muted">Nenhum insumo configurado está abaixo do mínimo.</p>'}${sugestoes.length?`<h4>Reposição de produtos e conexão com vendas (últimas 24 h)</h4><div class="table-wrap"><table><thead><tr><th>Produto</th><th class="numeric">Saldo</th><th class="numeric">Vendas</th><th class="numeric">Sugestão de OP</th><th></th></tr></thead><tbody>${sugestoes.map(x=>`<tr><td>${escapeHtml(x.ficha.nome)}</td><td class="numeric">${fmt(n(x.ficha.estoqueAtual),0)} un</td><td class="numeric">${fmt(vendas.get(x.ficha.id)||0,0)} un</td><td class="numeric">${x.qtd} un</td><td><button class="btn small" type="button" data-action="prod-criar-sugestao" data-ficha="${escapeHtml(x.ficha.id)}" data-quantidade="${x.qtd}">Criar OP</button></td></tr>`).join("")}</tbody></table></div>`:'<p class="muted">Sem produto pronto abaixo do mínimo. As vendas registradas alimentam esta sugestão automaticamente, sem criar OP sem aprovação.</p>'}</div><div class="card"><h3>Fluxo ativo</h3><p>${modoEstoqueEmpresa()==="insumos"?"Padrão da empresa: cada venda baixa os ingredientes da ficha. Produtos podem sobrescrever esta regra no Cardápio.":"Padrão da empresa: cada venda baixa o saldo de produto pronto; a OP baixa ingredientes ao iniciar e adiciona o produto ao concluir. Produtos podem sobrescrever esta regra no Cardápio."}</p><p class="footer-note">O saldo inicial deve ser informado na aba Estoque. Pedidos de compra só aumentam o saldo após o recebimento registrado.</p></div>`;
+ const sugestoesSemi=semiBaixos.map(f=>{const insumo=acharInsumo(f.insumoSemiAcabadoId);return {ficha:f,insumo,qtd:quantidadeReposicao(insumo)}});
+ p.innerHTML=`<div class="toolbar"><div><h2>Painel de produção</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Empresa")} · alertas de estoque e vendas atualizados no estado compartilhado.</div></div></div><div class="card"><div class="prod-grid"><div class="prod-kpi"><span>OP em andamento</span><strong>${abertas}</strong></div><div class="prod-kpi"><span>OP em rascunho</span><strong>${rascunhos}</strong></div><div class="prod-kpi"><span>Insumos comprados abaixo do mínimo</span><strong>${baixos.length}</strong></div><div class="prod-kpi"><span>Produtos prontos abaixo do mínimo</span><strong>${produtosBaixos.length}</strong></div><div class="prod-kpi"><span>Semi-acabados abaixo do mínimo</span><strong>${semiBaixos.length}</strong></div></div></div>${statusProducao?`<div class="notice" role="status">${escapeHtml(statusProducao)}</div>`:""}<div class="card"><div class="toolbar"><div><h3>Alertas de estoque</h3><p class="muted">Insumos comprados baixos geram pedidos de compra; produtos acabados e semi-acabados baixos geram sugestões de OP, sem iniciar a produção automaticamente.</p></div><button class="btn primary" type="button" data-action="prod-gerar-pedido" ${baixos.some(i=>quantidadeCompraSugerida(i)>0)?"":"disabled"}>Gerar pedido de compra</button></div>${baixos.length?`<h4>Insumos comprados</h4><div class="table-wrap"><table><thead><tr><th>Insumo</th><th class="numeric">Saldo</th><th class="numeric">Mínimo</th><th class="numeric">Comprar</th></tr></thead><tbody>${baixos.map(i=>`<tr><td>${escapeHtml(i.nome)}</td><td class="numeric">${fmt(n(i.estoqueAtual),3)} ${escapeHtml(i.unidade)}</td><td class="numeric">${fmt(n(i.estoqueMinimo),3)} ${escapeHtml(i.unidade)}</td><td class="numeric">${fmt(quantidadeCompraSugerida(i),3)} ${escapeHtml(i.unidade)}</td></tr>`).join("")}</tbody></table></div>`:'<p class="muted">Nenhum insumo comprado configurado está abaixo do mínimo.</p>'}${sugestoesSemi.length?`<h4>Produção de semi-acabados</h4><div class="table-wrap"><table><thead><tr><th>Semi-acabado</th><th class="numeric">Saldo</th><th class="numeric">Mínimo</th><th class="numeric">Sugestão de OP</th><th></th></tr></thead><tbody>${sugestoesSemi.map(x=>`<tr><td>${escapeHtml(x.ficha.nome)}</td><td class="numeric">${fmt(n(x.insumo.estoqueAtual),3)} ${escapeHtml(x.insumo.unidade)}</td><td class="numeric">${fmt(n(x.insumo.estoqueMinimo),3)} ${escapeHtml(x.insumo.unidade)}</td><td class="numeric">${fmt(x.qtd,3)} ${escapeHtml(x.insumo.unidade)}</td><td><button class="btn small" type="button" data-action="prod-criar-sugestao" data-ficha="${escapeHtml(x.ficha.id)}" data-quantidade="${x.qtd}" ${x.qtd>0?"":"disabled"}>Criar OP</button></td></tr>`).join("")}</tbody></table></div>`:""}${sugestoes.length?`<h4>Reposição de produtos acabados e conexão com vendas (últimas 24 h)</h4><div class="table-wrap"><table><thead><tr><th>Produto</th><th class="numeric">Saldo</th><th class="numeric">Vendas</th><th class="numeric">Sugestão de OP</th><th></th></tr></thead><tbody>${sugestoes.map(x=>`<tr><td>${escapeHtml(x.ficha.nome)}</td><td class="numeric">${fmt(n(x.ficha.estoqueAtual),0)} un</td><td class="numeric">${fmt(vendas.get(x.ficha.id)||0,0)} un</td><td class="numeric">${x.qtd} un</td><td><button class="btn small" type="button" data-action="prod-criar-sugestao" data-ficha="${escapeHtml(x.ficha.id)}" data-quantidade="${x.qtd}">Criar OP</button></td></tr>`).join("")}</tbody></table></div>`:'<p class="muted">Sem produto acabado pronto abaixo do mínimo. As vendas recentes orientam as sugestões, sem criar OP sem aprovação.</p>'}</div><div class="card"><h3>Fluxo ativo</h3><p>${modoEstoqueEmpresa()==="insumos"?"Padrão da empresa: cada venda baixa os ingredientes da ficha. Produtos podem sobrescrever esta regra no Cardápio.":"Padrão da empresa: cada venda baixa o saldo de produto pronto; a OP baixa ingredientes ao iniciar e repõe o produto ao concluir."}</p><p class="footer-note">Os semi-acabados são insumos produzidos por OP e baixados quando usados em outras receitas. O saldo inicial deve ser informado na aba Estoque.</p></div>`;
 }
 function renderOrdensProducao(){
- const p=$("#panel-producao-ordens"),opcoes=fichasProdutoPronto(),ativas=dados.ordensProducao.filter(o=>["rascunho","em_producao"].includes(o.status)),historico=dados.ordensProducao.filter(o=>!["rascunho","em_producao"].includes(o.status));
+ const p=$("#panel-producao-ordens"),opcoes=fichasComOrdemProducao(),ativas=dados.ordensProducao.filter(o=>["rascunho","em_producao"].includes(o.status)),historico=dados.ordensProducao.filter(o=>!["rascunho","em_producao"].includes(o.status));
  const fmtData=iso=>{const dt=new Date(iso);return Number.isNaN(dt.getTime())?"—":dt.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})};
- const card=o=>`<article class="card prod-order-card"><div class="prod-order-head"><div><h3>OP #${escapeHtml(o.numero)} · ${escapeHtml(o.nome)}</h3><span class="muted">${o.quantidade} un · ${o.status==="rascunho"?"Rascunho":o.status==="em_producao"?"Em produção":o.status==="concluida"?"Concluída":o.status==="cancelada"?"Cancelada":"Perda registrada"} · criada ${fmtData(o.criadaEm)}</span></div><div class="actions">${o.status==="rascunho"?(confirmacaoOrdemPendente===`cancelar:${o.id}`?`<button class="btn danger" type="button" data-action="prod-confirmar-cancelamento-op" data-id="${escapeHtml(o.id)}">Confirmar cancelamento</button><button class="btn" type="button" data-action="prod-voltar-op">Voltar</button>`:`<button class="btn primary" type="button" data-action="prod-iniciar-op" data-id="${escapeHtml(o.id)}">Abrir OP / iniciar</button><button class="btn danger" type="button" data-action="prod-cancelar-op" data-id="${escapeHtml(o.id)}">Cancelar rascunho</button>`):""}${o.status==="em_producao"?(confirmacaoOrdemPendente===`perda:${o.id}`?`<button class="btn danger" type="button" data-action="prod-confirmar-perda-op" data-id="${escapeHtml(o.id)}">Confirmar perda</button><button class="btn" type="button" data-action="prod-voltar-op">Voltar</button>`:`<button class="btn primary" type="button" data-action="prod-concluir-op" data-id="${escapeHtml(o.id)}">Concluir e adicionar ao estoque</button><button class="btn danger" type="button" data-action="prod-perda-op" data-id="${escapeHtml(o.id)}">Registrar perda</button>`):""}</div></div><div class="prod-order-lines">${o.consumos?.length?`Baixa realizada: ${o.consumos.map(x=>`${escapeHtml(x.nome)} ${fmt(x.quantidade,3)} ${escapeHtml(x.unidade)}`).join(" · ")}`:"Rascunho: nenhum estoque foi movimentado."}</div></article>`;
- p.innerHTML=`<div class="toolbar"><div><h2>Ordens de produção</h2><div class="muted">Rascunho → iniciar (baixa insumos uma vez) → concluir (adiciona produto pronto ao estoque).</div></div></div>${statusProducao?`<div class="notice" role="status">${escapeHtml(statusProducao)}</div>`:""}<form id="form-criar-op" class="card grid"><label class="field"><span>Produto / ficha técnica</span><select name="ficha" required ${opcoes.length?"":"disabled"}>${opcoes.map(f=>`<option value="${escapeHtml(f.id)}">${escapeHtml(f.nome)}</option>`).join("")}</select></label><label class="field"><span>Quantidade a produzir (un)</span><input name="quantidade" type="number" min="1" step="1" value="1" required ${opcoes.length?"":"disabled"}></label><button class="btn primary" type="submit" ${opcoes.length?"":"disabled"}>Criar OP em rascunho</button>${opcoes.length?"":'<p class="notice">Nenhuma ficha está no modo “produto pronto”. Ajuste o padrão da empresa ou a ficha na aba Cardápio.</p>'}</form><div class="prod-orders">${ativas.map(card).join("")||'<div class="card empty">Nenhuma OP em aberto.</div>'}</div><details class="card"><summary>Histórico de produção (${historico.length})</summary><div class="prod-orders" style="margin-top:12px">${historico.map(card).join("")||'<p class="muted">Ainda não há ordens concluídas ou canceladas.</p>'}</div></details>`;
+ const card=o=>`<article class="card prod-order-card"><div class="prod-order-head"><div><h3>OP #${escapeHtml(o.numero)} · ${escapeHtml(o.nome)}</h3><span class="muted">${fmt(n(o.quantidade),3)} ${escapeHtml(o.unidade||"un")} · ${o.status==="rascunho"?"Rascunho":o.status==="em_producao"?"Em produção":o.status==="concluida"?"Concluída":o.status==="cancelada"?"Cancelada":"Perda registrada"} · criada ${fmtData(o.criadaEm)}</span></div><div class="actions">${o.status==="rascunho"?(confirmacaoOrdemPendente===`cancelar:${o.id}`?`<button class="btn danger" type="button" data-action="prod-confirmar-cancelamento-op" data-id="${escapeHtml(o.id)}">Confirmar cancelamento</button><button class="btn" type="button" data-action="prod-voltar-op">Voltar</button>`:`<button class="btn primary" type="button" data-action="prod-iniciar-op" data-id="${escapeHtml(o.id)}">Abrir OP / iniciar</button><button class="btn danger" type="button" data-action="prod-cancelar-op" data-id="${escapeHtml(o.id)}">Cancelar rascunho</button>`):""}${o.status==="em_producao"?(confirmacaoOrdemPendente===`perda:${o.id}`?`<button class="btn danger" type="button" data-action="prod-confirmar-perda-op" data-id="${escapeHtml(o.id)}">Confirmar perda</button><button class="btn" type="button" data-action="prod-voltar-op">Voltar</button>`:`<button class="btn primary" type="button" data-action="prod-concluir-op" data-id="${escapeHtml(o.id)}">Concluir e adicionar ao estoque</button><button class="btn danger" type="button" data-action="prod-perda-op" data-id="${escapeHtml(o.id)}">Registrar perda</button>`):""}</div></div><div class="prod-order-lines">${o.consumos?.length?`Baixa realizada: ${o.consumos.map(x=>`${escapeHtml(x.nome)} ${fmt(x.quantidade,3)} ${escapeHtml(x.unidade)}`).join(" · ")}`:"Rascunho: nenhum estoque foi movimentado."}</div></article>`;
+ p.innerHTML=`<div class="toolbar"><div><h2>Ordens de produção</h2><div class="muted">Rascunho → iniciar (baixa insumos uma vez) → concluir (repõe o produto acabado ou semi-acabado).</div></div></div>${statusProducao?`<div class="notice" role="status">${escapeHtml(statusProducao)}</div>`:""}<form id="form-criar-op" class="card grid"><label class="field"><span>Produto / ficha técnica</span><select name="ficha" required ${opcoes.length?"":"disabled"}>${opcoes.map(f=>`<option value="${escapeHtml(f.id)}">${escapeHtml(f.nome)} · ${f.tipoProduto==="semiacabado"?`semi-acabado (${escapeHtml(f.unidadeSemiAcabado||"un")})`:"produto acabado"}</option>`).join("")}</select></label><label class="field"><span>Quantidade (unidade do produto)</span><input name="quantidade" type="number" min="0.001" step="any" value="1" required ${opcoes.length?"":"disabled"}></label><button class="btn primary" type="submit" ${opcoes.length?"":"disabled"}>Criar OP em rascunho</button>${opcoes.length?"":'<p class="notice">Configure produtos acabados como “produto pronto” na aba Cardápio ou cadastre uma ficha de produto semi-acabado.</p>'}</form><div class="prod-orders">${ativas.map(card).join("")||'<div class="card empty">Nenhuma OP em aberto.</div>'}</div><details class="card"><summary>Histórico de produção (${historico.length})</summary><div class="prod-orders" style="margin-top:12px">${historico.map(card).join("")||'<p class="muted">Ainda não há ordens concluídas ou canceladas.</p>'}</div></details>`;
 }
 function renderEstoqueProducao(){
  const p=$("#panel-producao-estoque"),prontos=fichasProdutoPronto(),movimentos=[...dados.movimentosEstoque].reverse().slice(0,30);
- const linhas=(itens,tipo)=>itens.map(item=>`<tr><td>${escapeHtml(item.nome||"Item sem nome")}</td><td>${escapeHtml(item.unidade||"un")}</td><td><input class="cell-input" type="number" min="0" step="${item.unidade==="un"?"1":"0.001"}" data-stock-edit data-stock-kind="${tipo}" data-stock-id="${escapeHtml(item.id)}" data-stock-field="estoqueAtual" value="${n(item.estoqueAtual)}" aria-label="Saldo de ${escapeHtml(item.nome)}"></td><td><input class="cell-input" type="number" min="0" step="${item.unidade==="un"?"1":"0.001"}" data-stock-edit data-stock-kind="${tipo}" data-stock-id="${escapeHtml(item.id)}" data-stock-field="estoqueMinimo" value="${n(item.estoqueMinimo)}" aria-label="Mínimo de ${escapeHtml(item.nome)}"></td><td><input class="cell-input" type="number" min="0" step="${item.unidade==="un"?"1":"0.001"}" data-stock-edit data-stock-kind="${tipo}" data-stock-id="${escapeHtml(item.id)}" data-stock-field="estoqueAlvo" value="${n(item.estoqueAlvo)}" aria-label="Alvo de ${escapeHtml(item.nome)}"></td><td>${abaixoEstoqueMinimo(item)?'<span class="pill prod-pill-warning">Abaixo do mínimo</span>':'<span class="pill">Normal</span>'}</td></tr>`).join("");
+ const linhas=(itens,tipo)=>itens.map(item=>`<tr><td>${escapeHtml(item.nome||"Item sem nome")}${item.semiAcabadoFichaId?'<span class="pill">Semi-acabado</span>':""}</td><td>${escapeHtml(item.unidade||"un")}</td><td><input class="cell-input" type="number" min="0" step="${item.unidade==="un"?"1":"0.001"}" data-stock-edit data-stock-kind="${tipo}" data-stock-id="${escapeHtml(item.id)}" data-stock-field="estoqueAtual" value="${n(item.estoqueAtual)}" aria-label="Saldo de ${escapeHtml(item.nome)}"></td><td><input class="cell-input" type="number" min="0" step="${item.unidade==="un"?"1":"0.001"}" data-stock-edit data-stock-kind="${tipo}" data-stock-id="${escapeHtml(item.id)}" data-stock-field="estoqueMinimo" value="${n(item.estoqueMinimo)}" aria-label="Mínimo de ${escapeHtml(item.nome)}"></td><td><input class="cell-input" type="number" min="0" step="${item.unidade==="un"?"1":"0.001"}" data-stock-edit data-stock-kind="${tipo}" data-stock-id="${escapeHtml(item.id)}" data-stock-field="estoqueAlvo" value="${n(item.estoqueAlvo)}" aria-label="Alvo de ${escapeHtml(item.nome)}"></td><td>${abaixoEstoqueMinimo(item)?'<span class="pill prod-pill-warning">Abaixo do mínimo</span>':'<span class="pill">Normal</span>'}</td></tr>`).join("");
  p.innerHTML=`<div class="toolbar"><div><h2>Estoque</h2><div class="muted">Informe o saldo físico inicial e configure mínimo e alvo. Alterações de saldo ficam registradas.</div></div></div>${statusProducao?`<div class="notice" role="status">${escapeHtml(statusProducao)}</div>`:""}<div class="card"><h3>Insumos e itens comprados</h3>${dados.insumos.length?`<div class="table-wrap prod-table"><table><thead><tr><th>Insumo</th><th>Unidade</th><th>Saldo atual</th><th>Mínimo para alerta</th><th>Estoque alvo</th><th>Situação</th></tr></thead><tbody>${linhas(dados.insumos,"insumo")}</tbody></table></div>`:'<p class="muted">Cadastre insumos na aba Ficha Técnica → Insumos.</p>'}</div><div class="card"><h3>Produtos prontos</h3><p class="muted">Apenas fichas no modo “produto pronto” têm saldo de produto acabado.</p>${prontos.length?`<div class="table-wrap prod-table"><table><thead><tr><th>Produto</th><th>Unidade</th><th>Saldo atual</th><th>Mínimo para alerta</th><th>Estoque alvo</th><th>Situação</th></tr></thead><tbody>${linhas(prontos,"produto")}</tbody></table></div>`:'<p class="muted">Nenhum produto pronto configurado.</p>'}</div><details class="card"><summary>Movimentações recentes (${movimentos.length})</summary>${movimentos.length?`<div class="table-wrap prod-history"><table><thead><tr><th>Data</th><th>Item</th><th>Movimento</th><th>Origem</th><th>Observação</th></tr></thead><tbody>${movimentos.map(m=>`<tr><td>${new Date(m.dataHora).toLocaleString("pt-BR")}</td><td>${escapeHtml(m.nome)}</td><td class="${n(m.quantidade)<0?"bad":"good"}">${n(m.quantidade)>0?"+":""}${fmt(n(m.quantidade),3)} ${escapeHtml(m.unidade)}</td><td>${escapeHtml(m.origem)}</td><td>${escapeHtml(m.observacao||"")}</td></tr>`).join("")}</tbody></table></div>`:'<p class="muted">As movimentações aparecerão aqui.</p>'}</details>`;
 }
 function renderComprasProducao(){
@@ -960,7 +1014,7 @@ async function comprimirImagemCardapio(arquivo){
  return canvas.toDataURL("image/jpeg",.78);
 }
 function renderPdv(){
- const painel=$("#panel-pdv"),disponiveis=dados.fichas.filter(f=>f.publicadoPdv&&n(f.precoAtual)>0);
+ const painel=$("#panel-pdv"),disponiveis=dados.fichas.filter(f=>f.tipoProduto!=="semiacabado"&&f.publicadoPdv&&n(f.precoAtual)>0);
  const caixa=caixaAberto();
  const linhas=dados.pedidoPdv.map(item=>{
   if(!item.linhaId)item.linhaId=uid();
@@ -974,6 +1028,8 @@ function renderPdv(){
  painel.innerHTML=`<div class="pos-toolbar"><div><h2>PDV</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Atendimento")}</div></div><label class="field pos-search"><span>Buscar no cardápio</span><input type="search" data-pdv-search placeholder="Digite o nome do produto"></label></div><div class="pos-layout"><section class="pos-products" aria-label="Produtos disponíveis">${disponiveis.length?`<div class="pos-product-grid">${disponiveis.map(f=>`<button class="pos-product" type="button" data-action="pdv-adicionar" data-id="${escapeHtml(f.id)}" data-search="${escapeHtml(`${f.nome} ${f.categoria}`.toLocaleLowerCase("pt-BR"))}"><span class="pos-product-art">${f.imagemCardapio?`<img src="${escapeHtml(f.imagemCardapio)}" alt="">`:`<span>${escapeHtml(String(f.nome||"?").trim().slice(0,1).toLocaleUpperCase("pt-BR"))}</span>`}</span><span class="pos-product-name">${escapeHtml(f.nome||"Produto sem nome")}</span><span class="pos-product-category">${escapeHtml(f.categoria)}</span><span class="pos-product-price">${moeda(n(f.precoAtual))}</span></button>`).join("")}</div>`:'<div class="card empty">Nenhum produto está visível no PDV. Acesse Cardápio e ative o seletor de um produto com preço cadastrado.</div>'}</section><aside class="card pos-order"><div class="pos-order-head"><h2>Pedido #${numero}</h2>${limpezaPendente?'<span class="actions"><button class="btn small danger" data-action="pdv-confirmar-limpeza">Confirmar</button><button class="btn small" data-action="pdv-cancelar-remocao">Cancelar</button></span>':`<button class="btn small" data-action="pdv-limpar" ${dados.pedidoPdv.length?"":"disabled"}>Limpar pedido</button>`}</div><div class="pos-cart">${linhas||'<div class="empty">Adicione produtos do cardápio ao pedido.</div>'}</div>${htmlDesconto("pdv",descontoPdv)}<div class="pos-totals"><div class="pos-total-row"><span>Subtotal</span><strong data-pdv-subtotal>${moeda(sub)}</strong></div><div class="pos-total-row" data-pdv-desconto-linha ${desc>0?"":"hidden"}><span>Desconto</span><strong data-pdv-desconto>− ${moeda(desc)}</strong></div><div class="pos-total-row final"><span>Total</span><strong data-pdv-total>${moeda(total)}</strong></div></div><h3>Forma de pagamento</h3><div class="pos-payment-options">${["Dinheiro","Pix","Crédito","Débito"].map(m=>`<button class="btn ${pagamentoPdv===m?"selected":""}" type="button" data-action="pdv-pagamento" data-method="${m}">${m}</button>`).join("")}</div><button class="btn primary" style="width:100%" data-action="pdv-finalizar" data-pdv-registrar ${dados.pedidoPdv.length&&caixa?"":"disabled"}>Registrar venda · ${moeda(total)}</button>${caixa?"":'<p class="notice warning">Caixa fechado. Abra o caixa na aba 1.2. Caixa para registrar vendas.</p>'}<p class="footer-note">O registro não processa pagamentos; confirme o recebimento no meio escolhido.</p><div class="pos-comanda-box"><h3>Comanda</h3><label class="field"><span>Nome ou número da comanda</span><input type="text" data-comanda-input list="comandas-abertas" maxlength="40" autocomplete="off" placeholder="Ex.: Mesa 4, João, 12" value="${escapeHtml(comandaPdv)}"></label><datalist id="comandas-abertas">${dados.comandas.map(c=>`<option value="${escapeHtml(c.identificador)}"></option>`).join("")}</datalist><button class="btn" style="width:100%" type="button" data-action="pdv-enviar-comanda" ${dados.pedidoPdv.length?"":"disabled"}>Enviar para comanda</button><p class="footer-note">Se a comanda já estiver aberta, os itens são somados a ela (o desconto informado acima também vai junto). O pagamento é feito depois, na aba 1.1. Comanda.</p></div>${statusPdv?`<div class="notice" role="status">${escapeHtml(statusPdv)}</div>`:""}<h3>Vendas recentes</h3><div class="pos-recent">${recentes||'<span class="muted">Nenhuma venda registrada.</span>'}</div></aside></div>`;
 }
 function renderTudo(){
+ const alterouInsumosSemiAcabados=sincronizarInsumosSemiAcabados();
+ if(alterouInsumosSemiAcabados)salvar();
  const renderers={insumos:renderInsumos,fichas:renderFichas,cmo:renderCmo,precificacao:renderPrecificacao,analise:renderAnalise};
  for(const [nome,render] of Object.entries(renderers)){
    const painel=$(`#panel-${nome}`);
@@ -1027,38 +1083,41 @@ function alternarSubAbaProducao(nome){
 }
 function renderInsumos(){
   const p=$("#panel-insumos");
+  if(sincronizarInsumosSemiAcabados())salvar();
   p.innerHTML=`<div class="toolbar"><div><h2>Insumos</h2><div class="muted">Cadastre o custo de compra; as fichas calculam automaticamente o custo proporcional.</div></div><button class="btn primary" data-action="novo-insumo">+ Novo insumo</button></div>
-  <div class="card table-wrap"><table><thead><tr><th>Nome</th><th>Unidade</th><th class="numeric">Preço pago</th><th class="numeric">Quantidade na compra</th><th class="numeric">Custo por unidade</th><th></th></tr></thead><tbody>${dados.insumos.length?dados.insumos.map(i=>`<tr data-insumo="${escapeHtml(i.id)}"><td><input class="cell-input name" data-field="nome" value="${escapeHtml(i.nome)}" aria-label="Nome do insumo"></td><td><select class="cell-select" data-field="unidade">${UNIDADES.map(u=>`<option ${u===i.unidade?"selected":""}>${u}</option>`).join("")}</select></td><td><input class="cell-input" type="number" min="0" step="0.01" data-field="preco" value="${escapeHtml(i.preco)}" aria-label="Preço pago"></td><td><input class="cell-input" type="number" min="0" step="any" data-field="quantidade" value="${escapeHtml(i.quantidade)}" aria-label="Quantidade na compra"></td><td class="numeric"><span id="custo-insumo-${escapeHtml(i.id)}">${moeda(custoInsumo(i))} / ${escapeHtml(i.unidade)}</span></td><td>${botaoExcluir("insumo",i.id)}</td></tr>`).join(""):`<tr><td class="empty" colspan="6">Nenhum insumo cadastrado.</td></tr>`}</tbody></table></div>`;
+  <div class="card table-wrap"><table><thead><tr><th>Nome</th><th>Unidade</th><th class="numeric">Preço pago</th><th class="numeric">Quantidade na compra</th><th class="numeric">Custo por unidade</th><th></th></tr></thead><tbody>${dados.insumos.length?dados.insumos.map(i=>{const semi=fichaSemiAcabado(i);return `<tr data-insumo="${escapeHtml(i.id)}"><td>${semi?`<span class="cell-input name">${escapeHtml(i.nome)}</span><span class="pill">Semi-acabado</span>`:`<input class="cell-input name" data-field="nome" value="${escapeHtml(i.nome)}" aria-label="Nome do insumo">`}</td><td>${semi?`<span class="pill">${escapeHtml(i.unidade)}</span>`:`<select class="cell-select" data-field="unidade">${UNIDADES.map(u=>`<option ${u===i.unidade?"selected":""}>${u}</option>`).join("")}</select>`}</td><td>${semi?`<span>${moeda(custoInsumo(i))}</span>`:`<input class="cell-input" type="number" min="0" step="0.01" data-field="preco" value="${escapeHtml(i.preco)}" aria-label="Preço pago">`}</td><td>${semi?'<span class="muted">Produção própria</span>':`<input class="cell-input" type="number" min="0" step="any" data-field="quantidade" value="${escapeHtml(i.quantidade)}" aria-label="Quantidade na compra">`}</td><td class="numeric"><span id="custo-insumo-${escapeHtml(i.id)}">${moeda(custoInsumo(i))} / ${escapeHtml(i.unidade)}</span></td><td>${semi?'<span class="muted">Gerenciado pela ficha</span>':botaoExcluir("insumo",i.id)}</td></tr>`}).join(""):`<tr><td class="empty" colspan="6">Nenhum insumo cadastrado.</td></tr>`}</tbody></table></div>`;
 }
 function botaoExcluir(tipo,id){return `<span class="delete-box" data-delete-box="${tipo}-${escapeHtml(id)}"><button class="btn small danger" data-action="pedir-exclusao" data-tipo="${tipo}" data-id="${escapeHtml(id)}">Excluir</button></span>`}
-function optionsInsumos(sel){return `<option value="">Selecione</option>${dados.insumos.map(i=>`<option value="${escapeHtml(i.id)}" ${i.id===sel?"selected":""}>${escapeHtml(i.nome)} (${escapeHtml(i.unidade)})</option>`).join("")}`}
+function optionsInsumos(sel,excluirFichaId=""){return `<option value="">Selecione</option>${dados.insumos.filter(i=>i.semiAcabadoFichaId!==excluirFichaId).map(i=>`<option value="${escapeHtml(i.id)}" ${i.id===sel?"selected":""}>${escapeHtml(i.nome)} (${escapeHtml(i.unidade)})${i.semiAcabadoFichaId?" · semi-acabado":""}</option>`).join("")}`}
 function opcoesUnidade(item){
   const ins=acharInsumo(item.referencia), opts=ins?UNIDADES.filter(u=>u===ins.unidade||fatorConversao(ins.unidade,u)>0):UNIDADES;
   return opts.map(u=>`<option ${u===item.unidade?"selected":""}>${u}</option>`).join("");
 }
 function seletorItem(ficha,item){
-  if(ficha.combo){
+  if(ficha.tipoProduto==="combo"){
     const fichas=dados.fichas.filter(f=>!f.combo&&f.id!==ficha.id);
-    return `<select class="cell-select" data-field="referencia" aria-label="Ingrediente"><option value="">Selecione</option><optgroup label="Lanches / fichas">${fichas.map(f=>`<option value="f:${escapeHtml(f.id)}" ${item.tipo==="ficha"&&item.referencia===f.id?"selected":""}>${escapeHtml(f.nome)}</option>`).join("")}</optgroup><optgroup label="Insumos">${dados.insumos.map(i=>`<option value="i:${escapeHtml(i.id)}" ${item.tipo==="insumo"&&item.referencia===i.id?"selected":""}>${escapeHtml(i.nome)} (${escapeHtml(i.unidade)})</option>`).join("")}</optgroup></select>`;
+    return `<select class="cell-select" data-field="referencia" aria-label="Ingrediente"><option value="">Selecione</option><optgroup label="Produtos acabados">${fichas.filter(f=>f.tipoProduto==="acabado").map(f=>`<option value="f:${escapeHtml(f.id)}" ${item.tipo==="ficha"&&item.referencia===f.id?"selected":""}>${escapeHtml(f.nome)}</option>`).join("")}</optgroup><optgroup label="Insumos e semi-acabados">${dados.insumos.map(i=>`<option value="i:${escapeHtml(i.id)}" ${item.tipo==="insumo"&&item.referencia===i.id?"selected":""}>${escapeHtml(i.nome)} (${escapeHtml(i.unidade)})${i.semiAcabadoFichaId?" · semi-acabado":""}</option>`).join("")}</optgroup></select>`;
   }
-  return `<select class="cell-select" data-field="referencia" aria-label="Ingrediente">${optionsInsumos(item.referencia)}</select>`;
+  return `<select class="cell-select" data-field="referencia" aria-label="Ingrediente">${optionsInsumos(item.referencia,ficha.id)}</select>`;
 }
 function renderFicha(f,idx){
   const total=totalFicha(f),cmv=cmvFicha(f),sug=precoSugerido(f),margemPlaceholder=`placeholder="${escapeHtml(dados.margemPadrao)}"`;
+  const tipo=TIPOS_PRODUTO.find(([valor])=>valor===f.tipoProduto)?.[1]||"Produto acabado";
   const top=`<article class="card product-card" data-ficha="${escapeHtml(f.id)}"><div class="product-head">
-  <div class="inline"><button class="btn small" data-action="toggle-ficha" aria-label="${f.aberta?"Minimizar":"Expandir"} ficha">${f.aberta?"−":"+"}</button><h2>${escapeHtml(f.nome||"Nova ficha")}</h2><span class="pill">${escapeHtml(f.categoria)}</span>${f.combo?'<span class="pill">Combo</span>':""}</div>
-  <div class="actions">${!f.aberta?`<span class="collapsed-info">CMV ${moeda(cmv)} · Sugerido ${Number.isFinite(sug)?moeda(sug):rotuloPreco(f)} · Atual ${n(f.precoAtual)>0?moeda(n(f.precoAtual)):"—"}</span>`:""}<button class="btn small" data-action="copiar-ficha">Copiar</button>${botaoExcluir("ficha",f.id)}</div></div>`;
+  <div class="inline"><button class="btn small" data-action="toggle-ficha" aria-label="${f.aberta?"Minimizar":"Expandir"} ficha">${f.aberta?"−":"+"}</button><h2>${escapeHtml(f.nome||"Nova ficha")}</h2><span class="pill">${tipo}</span>${f.categoria?`<span class="pill">${escapeHtml(f.categoria)}</span>`:""}</div>
+  <div class="actions">${!f.aberta?`<span class="collapsed-info">CMV ${moeda(cmv)}${f.tipoProduto==="semiacabado"?` / ${escapeHtml(f.unidadeSemiAcabado||"un")}`:` · Sugerido ${Number.isFinite(sug)?moeda(sug):rotuloPreco(f)} · Atual ${n(f.precoAtual)>0?moeda(n(f.precoAtual)):"—"}`}</span>`:""}<button class="btn small" data-action="copiar-ficha">Copiar</button>${botaoExcluir("ficha",f.id)}</div></div>`;
   if(!f.aberta)return top+"</article>";
   return `${top}<div class="product-body"><div class="grid">
     <div class="field"><label>Nome</label><input data-field="nome" class="cell-input" value="${escapeHtml(f.nome)}"></div>
-    <div class="field"><label>Categoria</label><select data-field="categoria">${categoriasEmpresa().map(c=>`<option ${f.categoria===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}</select></div>
-    <label class="checkline"><input type="checkbox" data-field="combo" ${f.combo?"checked":""}> Combo</label>
-    <div class="field"><label>Porções (rendimento)</label><input type="number" min="0.001" step="any" data-field="porcoes" value="${escapeHtml(f.porcoes)}"></div>
+    <div class="field"><label>Tipo de produto</label><select data-field="tipoProduto">${TIPOS_PRODUTO.map(([valor,label])=>`<option value="${valor}" ${f.tipoProduto===valor?"selected":""}>${label}</option>`).join("")}</select></div>
+    <div class="field"><label>Categoria comercial</label><select data-field="categoria">${categoriasEmpresa().map(c=>`<option ${f.categoria===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}</select></div>
+    <div class="field"><label>${f.tipoProduto==="semiacabado"?"Rendimento produzido":"Porções (rendimento)"}</label><input type="number" min="0.001" step="any" data-field="porcoes" value="${escapeHtml(f.porcoes)}"></div>
+    ${f.tipoProduto==="semiacabado"?`<div class="field"><label>Unidade do semi-acabado</label><select data-field="unidadeSemiAcabado">${UNIDADES.map(u=>`<option value="${u}" ${f.unidadeSemiAcabado===u?"selected":""}>${u}</option>`).join("")}</select></div>`:""}
   </div>
   <div class="table-wrap"><table><thead><tr><th>Ingrediente</th><th class="numeric">Quantidade</th><th>Unidade</th><th class="numeric">Custo da linha</th><th>Ações</th></tr></thead><tbody>${f.itens.map((it,j)=>`<tr data-item="${escapeHtml(it.id)}"><td>${seletorItem(f,it)}</td><td><input class="cell-input" type="number" min="0" step="any" data-field="quantidade" value="${escapeHtml(it.quantidade)}" aria-label="Quantidade"></td><td>${it.tipo==="ficha"?'<span class="pill">un</span>':`<select class="cell-select" data-field="unidade">${opcoesUnidade(it)}</select>`}</td><td class="numeric"><span id="custo-item-${escapeHtml(it.id)}">${moeda(custoItem(it))}</span></td><td class="actions"><button class="btn small" data-action="mover-item" data-dir="-1" aria-label="Subir ingrediente">▲</button><button class="btn small" data-action="mover-item" data-dir="1" aria-label="Descer ingrediente">▼</button>${botaoExcluir("item",it.id)}</td></tr>`).join("")}</tbody></table></div>
   ${!f.itens.length&&Number.isFinite(f.cmvImportado)?'<div class="notice">CMV, preço sugerido e lucro foram importados do resumo fornecido. Ele não incluía ingredientes nem quantidades; adicione ingredientes para calcular a ficha a partir da receita.</div>':""}
   <button class="btn small" data-action="novo-item">+ Ingrediente</button>
-  <div class="grid" style="margin-top:15px">
+  ${f.tipoProduto==="semiacabado"?`<div class="notice">Este semi-acabado será cadastrado automaticamente em <strong>Insumos</strong>. O custo por ${escapeHtml(f.unidadeSemiAcabado||"un")} será calculado pela ficha e o saldo produzido fica controlado em Estoque/OP.</div><div class="grid" style="margin-top:15px"><div class="metric"><span class="label">Custo de produção do lote</span><strong id="total-${escapeHtml(f.id)}">${moeda(total)}</strong></div><div class="metric"><span class="label">Custo por ${escapeHtml(f.unidadeSemiAcabado||"un")}</span><strong id="cmv-${escapeHtml(f.id)}">${moeda(cmv)}</strong></div></div>`:`<div class="grid" style="margin-top:15px">
     <div class="metric"><span class="label">Custo total da ficha</span><strong id="total-${escapeHtml(f.id)}">${moeda(total)}</strong></div>
     <div class="metric"><span class="label">CMV por unidade</span><strong id="cmv-${escapeHtml(f.id)}">${moeda(cmv)}</strong></div>
     <div class="field"><label>Margem de lucro desejada (%) <span class="muted">opcional</span></label><input type="number" min="0" step="0.1" data-field="margem" value="${escapeHtml(f.margem)}" ${margemPlaceholder}></div>
@@ -1066,25 +1125,24 @@ function renderFicha(f,idx){
     <div class="field"><label>Preço de venda atual (R$)</label><input type="number" min="0" step="0.01" data-field="precoAtual" value="${escapeHtml(f.precoAtual)}"></div>
     <div class="metric"><span class="label">CMV % do preço atual</span><strong id="cmvpct-${escapeHtml(f.id)}">${n(f.precoAtual)>0?pct(cmv/n(f.precoAtual)*100):"—"}</strong></div>
     <div class="metric"><span class="label">Margem de lucro real</span><strong id="margem-real-${escapeHtml(f.id)}" class="${margemReal(f)>=0?"good":"bad"}">${pct(margemReal(f))}</strong></div>
-  </div></div></article>`;
+  </div>`}</div></article>`;
 }
 function renderFichas(){
   const p=$("#panel-fichas"),filtro=dados.categoriaFiltro||"Todas";
-  const contagem=c=>dados.fichas.filter(f=>c==="Todas"||f.categoria===c).length;
-  const categorias=categoriasEmpresa();
-  const filtros=["Todas",...categorias].map(c=>`<button class="filter ${filtro===c?"active":""}" data-action="filtro" data-categoria="${escapeHtml(c)}">${escapeHtml(c)} (${contagem(c)})</button>`).join("");
-  const editor=categoriasRascunho===null?"":`<section class="card" aria-label="Editar categorias"><div class="toolbar"><div><h3>Categorias desta empresa</h3><div class="muted">As alterações serão salvas somente nesta empresa.</div></div></div><div class="category-editor">${categoriasRascunho.map((c,i)=>`<div class="category-editor-row"><label class="field"><span>Categoria ${i+1}</span><input data-category-draft="${i}" value="${escapeHtml(c.nome)}"></label><button class="btn small danger" type="button" data-action="remover-categoria" data-index="${i}">Remover</button></div>`).join("")}</div><div class="row"><label class="field"><span>Nova categoria</span><input id="nova-categoria" maxlength="40" placeholder="Ex.: Café da manhã"></label><button class="btn" type="button" data-action="adicionar-categoria">+ Adicionar</button><button class="btn primary" type="button" data-action="salvar-categorias">Salvar categorias</button><button class="btn" type="button" data-action="cancelar-categorias">Cancelar</button></div><div id="erro-categorias" class="notice warning" ${erroCategorias?"":"hidden"}>${escapeHtml(erroCategorias)}</div></section>`;
+  const tipos=TIPOS_PRODUTO.map(([tipo])=>tipo),contagem=c=>dados.fichas.filter(f=>c==="Todas"||f.tipoProduto===c).length;
+  const filtros=["Todas",...tipos].map(tipo=>{const label=tipo==="Todas"?"Todas":TIPOS_PRODUTO.find(([valor])=>valor===tipo)?.[1]||tipo;return `<button class="filter ${filtro===tipo?"active":""}" data-action="filtro" data-categoria="${escapeHtml(tipo)}">${label} (${contagem(tipo)})</button>`}).join("");
+  const editor=categoriasRascunho===null?"":`<section class="card" aria-label="Editar categorias comerciais"><div class="toolbar"><div><h3>Categorias comerciais</h3><div class="muted">Use essas categorias como detalhes de cardápio; os três tipos de ficha ficam definidos no campo “Tipo de produto”.</div></div></div><div class="category-editor">${categoriasRascunho.map((c,i)=>`<div class="category-editor-row"><label class="field"><span>Categoria ${i+1}</span><input data-category-draft="${i}" value="${escapeHtml(c.nome)}"></label><button class="btn small danger" type="button" data-action="remover-categoria" data-index="${i}">Remover</button></div>`).join("")}</div><div class="row"><label class="field"><span>Nova categoria</span><input id="nova-categoria" maxlength="40" placeholder="Ex.: Café da manhã"></label><button class="btn" type="button" data-action="adicionar-categoria">+ Adicionar</button><button class="btn primary" type="button" data-action="salvar-categorias">Salvar categorias</button><button class="btn" type="button" data-action="cancelar-categorias">Cancelar</button></div><div id="erro-categorias" class="notice warning" ${erroCategorias?"":"hidden"}>${escapeHtml(erroCategorias)}</div></section>`;
   let corpo="";
   if(!dados.fichas.length)corpo='<div class="empty card">Nenhuma ficha cadastrada. Adicione uma ficha para começar.</div>';
-  else if(filtro==="Todas")corpo=categorias.map(c=>{const arr=dados.fichas.map((f,i)=>({f,i})).filter(x=>x.f.categoria===c);return arr.length?`<h3 class="category-title">${escapeHtml(c)} (${arr.length})</h3>${arr.map(x=>renderFicha(x.f,x.i)).join("")}`:""}).join("");
-  else corpo=dados.fichas.map((f,i)=>({f,i})).filter(x=>x.f.categoria===filtro).map(x=>renderFicha(x.f,x.i)).join("")||'<div class="empty card">Nenhuma ficha nesta categoria.</div>';
-  p.innerHTML=`<div class="toolbar"><div><h2>Fichas técnicas</h2><div class="muted">Custos por porção, combos e preços sugeridos em um só lugar.</div></div><div class="actions"><button class="btn" data-action="editar-categorias">${categoriasRascunho===null?"Editar categorias":"Fechar edição"}</button><button class="btn" data-action="minimizar-todas">Minimizar todas</button><button class="btn" data-action="expandir-todas">Expandir todas</button><button class="btn" data-action="novo-combo">+ Novo combo</button><button class="btn primary" data-action="nova-ficha">+ Nova ficha</button></div></div>${editor}<div class="filters">${filtros}</div>${corpo}`;
+  else if(filtro==="Todas")corpo=tipos.map(tipo=>{const arr=dados.fichas.map((f,i)=>({f,i})).filter(x=>x.f.tipoProduto===tipo),label=TIPOS_PRODUTO.find(([valor])=>valor===tipo)?.[1]||tipo;return arr.length?`<h3 class="category-title">${label} (${arr.length})</h3>${arr.map(x=>renderFicha(x.f,x.i)).join("")}`:""}).join("");
+  else corpo=dados.fichas.map((f,i)=>({f,i})).filter(x=>x.f.tipoProduto===filtro).map(x=>renderFicha(x.f,x.i)).join("")||'<div class="empty card">Nenhuma ficha neste tipo.</div>';
+  p.innerHTML=`<div class="toolbar"><div><h2>Fichas técnicas</h2><div class="muted">Organize produtos acabados, combos e semi-acabados. Semi-acabados também ficam disponíveis como insumos.</div></div><div class="actions"><button class="btn" data-action="editar-categorias">${categoriasRascunho===null?"Editar categorias comerciais":"Fechar edição"}</button><button class="btn" data-action="minimizar-todas">Minimizar todas</button><button class="btn" data-action="expandir-todas">Expandir todas</button><button class="btn" data-action="novo-semiacabado">+ Semi-acabado</button><button class="btn" data-action="novo-combo">+ Novo combo</button><button class="btn primary" data-action="nova-ficha">+ Produto acabado</button></div></div>${editor}<div class="filters">${filtros}</div>${corpo}`;
 }
 function renderCmo(){const p=$("#panel-cmo"),total=totalCustos(),percent=n(dados.faturamento)>0?total/n(dados.faturamento)*100:NaN;
   p.innerHTML=`<div class="toolbar"><div><h2>Custos mensais (CMO)</h2><div class="muted">Custos operacionais médios usados para calcular o custo de mão de obra/operação sobre as vendas.</div></div><button class="btn primary" data-action="novo-custo">+ Adicionar custo</button></div><div class="card table-wrap"><table><thead><tr><th>Custo mensal</th><th class="numeric">Valor (R$)</th><th></th></tr></thead><tbody>${dados.custos.map(c=>`<tr data-custo="${escapeHtml(c.id)}"><td><input class="cell-input name" data-field="nome" value="${escapeHtml(c.nome)}" aria-label="Nome do custo"></td><td><input class="cell-input" type="number" min="0" step="0.01" data-field="valor" value="${escapeHtml(c.valor)}" aria-label="Valor mensal"></td><td>${botaoExcluir("custo",c.id)}</td></tr>`).join("")||'<tr><td class="empty" colspan="3">Nenhum custo cadastrado.</td></tr>'}</tbody></table><div class="grid" style="margin-top:14px"><div class="field"><label>Faturamento médio mensal (R$)</label><input type="number" min="0" step="0.01" data-global="faturamento" value="${escapeHtml(dados.faturamento)}"></div>  <div class="metric"><span class="label">Total de custos</span><strong id="total-custos">${moeda(total)}</strong></div><div class="metric"><span class="label">CMO atual</span><strong id="cmo-atual">${Number.isFinite(percent)?pct(percent):"—"}</strong></div></div><div class="notice warning" id="aviso-faturamento" style="${n(dados.faturamento)===0?"":"display:none"}">Informe um faturamento médio mensal maior que zero para calcular o CMO.</div></div>`;
 }
 function renderPrecificacao(){
- const p=$("#panel-precificacao"),dedBase=cmo()+n(dados.imposto)+n(dados.taxas),invalida=dados.fichas.some(f=>deducoes(f)>=100);
+ const p=$("#panel-precificacao"),dedBase=cmo()+n(dados.imposto)+n(dados.taxas),invalida=fichasVendaveis().some(f=>deducoes(f)>=100);
  p.innerHTML=`<div class="toolbar"><div><h2>Precificação</h2><div class="muted">Ajuste os parâmetros e compare o preço recomendado com o preço praticado.</div></div></div><div class="card"><div class="grid">
  <div class="field"><label>Imposto sobre vendas (%)</label><input type="number" min="0" step="0.1" data-global="imposto" value="${escapeHtml(dados.imposto)}"></div>
  <div class="field"><label>Taxas de cartão/delivery (%)</label><input type="number" min="0" step="0.1" data-global="taxas" value="${escapeHtml(dados.taxas)}"></div>
@@ -1092,10 +1150,10 @@ function renderPrecificacao(){
  <div class="metric"><span class="label">CMO atual</span><strong id="prec-cmo">${n(dados.faturamento)>0?pct(cmo()):"—"}</strong></div><div class="metric"><span class="label">Imposto + taxas + lucro desejado (sem CMO)</span><strong id="deducoes-base">${pct(n(dados.imposto)+n(dados.taxas)+n(dados.margemPadrao))}</strong></div></div>
  <div class="notice warning" id="aviso-cmo-prec" style="${Number.isFinite(cmo())?"display:none":""}">CMO não calculado: informe o faturamento na aba Custos mensais. Até lá, o preço sugerido é estimado sem CMO.</div>
  <div class="notice warning" id="aviso-deducoes" style="${invalida?"":"display:none"}">A soma das deduções, incluindo a margem desejada do produto, é ≥ 100%. Ajuste os parâmetros ou a margem para calcular preços.</div></div>
- <div class="card table-wrap" id="tabela-precificacao" style="${invalida?"display:none":""}"><table><thead><tr><th>Produto</th><th class="numeric">CMV</th><th class="numeric">Preço sugerido</th><th class="numeric">Markup</th><th class="numeric">Preço atual</th><th class="numeric">Lucro real (R$ / %)</th></tr></thead><tbody>${dados.fichas.map(f=>`<tr data-produto-prec="${escapeHtml(f.id)}"><td>${escapeHtml(f.nome)}</td><td class="numeric"><span id="prec-cmv-${escapeHtml(f.id)}">${moeda(cmvFicha(f))}</span></td><td class="numeric"><span id="prec-sugerido-${escapeHtml(f.id)}">${Number.isFinite(precoSugerido(f))?moeda(precoSugerido(f)):"—"}</span></td><td class="numeric"><span id="prec-markup-${escapeHtml(f.id)}">${cmvFicha(f)>0&&Number.isFinite(precoSugerido(f))?`${fmt(precoSugerido(f)/cmvFicha(f),2)}×`:"—"}</span></td><td class="numeric"><span id="prec-atual-${escapeHtml(f.id)}">${n(f.precoAtual)>0?moeda(n(f.precoAtual)):"—"}</span></td><td class="numeric"><span id="prec-lucro-${escapeHtml(f.id)}" class="${Number.isFinite(lucroReal(f))?(lucroReal(f)>=0?"good":"bad"):""}">${n(f.precoAtual)>0&&Number.isFinite(lucroReal(f))?`${moeda(lucroReal(f))} / ${pct(lucroReal(f)/n(f.precoAtual)*100)}`:"—"}</span></td></tr>`).join("")||'<tr><td colspan="6" class="empty">Cadastre fichas técnicas para ver a precificação.</td></tr>'}</tbody></table></div>`;
+ <div class="card table-wrap" id="tabela-precificacao" style="${invalida?"display:none":""}"><table><thead><tr><th>Produto</th><th class="numeric">CMV</th><th class="numeric">Preço sugerido</th><th class="numeric">Markup</th><th class="numeric">Preço atual</th><th class="numeric">Lucro real (R$ / %)</th></tr></thead><tbody>${fichasVendaveis().map(f=>`<tr data-produto-prec="${escapeHtml(f.id)}"><td>${escapeHtml(f.nome)}</td><td class="numeric"><span id="prec-cmv-${escapeHtml(f.id)}">${moeda(cmvFicha(f))}</span></td><td class="numeric"><span id="prec-sugerido-${escapeHtml(f.id)}">${Number.isFinite(precoSugerido(f))?moeda(precoSugerido(f)):"—"}</span></td><td class="numeric"><span id="prec-markup-${escapeHtml(f.id)}">${cmvFicha(f)>0&&Number.isFinite(precoSugerido(f))?`${fmt(precoSugerido(f)/cmvFicha(f),2)}×`:"—"}</span></td><td class="numeric"><span id="prec-atual-${escapeHtml(f.id)}">${n(f.precoAtual)>0?moeda(n(f.precoAtual)):"—"}</span></td><td class="numeric"><span id="prec-lucro-${escapeHtml(f.id)}" class="${Number.isFinite(lucroReal(f))?(lucroReal(f)>=0?"good":"bad"):""}">${n(f.precoAtual)>0&&Number.isFinite(lucroReal(f))?`${moeda(lucroReal(f))} / ${pct(lucroReal(f)/n(f.precoAtual)*100)}`:"—"}</span></td></tr>`).join("")||'<tr><td colspan="6" class="empty">Cadastre produtos acabados ou combos para ver a precificação.</td></tr>'}</tbody></table></div>`;
 }
 function dadosAnalise(){
- const produtos=dados.fichas.map(f=>({nome:f.nome,categoria:f.categoria,combo:f.combo,cmv:cmvFicha(f),precoAtual:n(f.precoAtual),precoSugerido:precoSugerido(f),margemDesejada:margemFicha(f),lucroReal:n(f.precoAtual)>0?lucroReal(f):null,cmvPercentual:n(f.precoAtual)>0?cmvFicha(f)/n(f.precoAtual)*100:null,itens:f.itens.map(it=>({nome:it.tipo==="ficha"?(acharFicha(it.referencia)?.nome||"Ficha removida"):(acharInsumo(it.referencia)?.nome||"Insumo removido"),quantidade:n(it.quantidade),unidade:it.tipo==="ficha"?"un":it.unidade,custo:custoItem(it)}))}));
+ const produtos=fichasVendaveis().map(f=>({nome:f.nome,categoria:f.categoria,tipoProduto:f.tipoProduto,combo:f.combo,cmv:cmvFicha(f),precoAtual:n(f.precoAtual),precoSugerido:precoSugerido(f),margemDesejada:margemFicha(f),lucroReal:n(f.precoAtual)>0?lucroReal(f):null,cmvPercentual:n(f.precoAtual)>0?cmvFicha(f)/n(f.precoAtual)*100:null,itens:f.itens.map(it=>({nome:it.tipo==="ficha"?(acharFicha(it.referencia)?.nome||"Ficha removida"):(acharInsumo(it.referencia)?.nome||"Insumo removido"),quantidade:n(it.quantidade),unidade:it.tipo==="ficha"?"un":it.unidade,custo:custoItem(it)}))}));
  return {parametros:{imposto:n(dados.imposto),taxas:n(dados.taxas),margemPadrao:n(dados.margemPadrao)},faturamentoMensal:n(dados.faturamento),custosMensais:dados.custos.map(c=>({nome:c.nome,valor:n(c.valor)})),totalCustos:totalCustos(),cmo:n(dados.faturamento)>0?cmo():null,insumos:dados.insumos.map(i=>({nome:i.nome,unidade:i.unidade,preco:n(i.preco),quantidade:n(i.quantidade),custoUnidade:custoInsumo(i)})),produtos};
 }
 function resumoLocal(){
@@ -1136,7 +1194,7 @@ function atualizarCalculos(){
  const total=$("#total-custos"),cmoEl=$("#cmo-atual");if(total)total.textContent=moeda(totalCustos());if(cmoEl)cmoEl.textContent=n(dados.faturamento)>0?pct(cmo()):"—";
  const pcmo=$("#prec-cmo"),ded=$("#deducoes-base");if(pcmo)pcmo.textContent=n(dados.faturamento)>0?pct(cmo()):"—";if(ded)ded.textContent=pct(n(dados.imposto)+n(dados.taxas)+n(dados.margemPadrao));
  const aviso=$("#aviso-faturamento");if(aviso)aviso.style.display=n(dados.faturamento)>0?"none":"";
- const invalida=dados.fichas.some(f=>deducoes(f)>=100),tabela=$("#tabela-precificacao"),warn=$("#aviso-deducoes"),avisoCmo=$("#aviso-cmo-prec");if(tabela)tabela.style.display=invalida?"none":"";if(warn)warn.style.display=invalida?"":"none";if(avisoCmo)avisoCmo.style.display=Number.isFinite(cmo())?"none":"";
+ const invalida=fichasVendaveis().some(f=>deducoes(f)>=100),tabela=$("#tabela-precificacao"),warn=$("#aviso-deducoes"),avisoCmo=$("#aviso-cmo-prec");if(tabela)tabela.style.display=invalida?"none":"";if(warn)warn.style.display=invalida?"":"none";if(avisoCmo)avisoCmo.style.display=Number.isFinite(cmo())?"none":"";
  const nomeInput=$("[data-field='nome']:focus");if(nomeInput){const row=nomeInput.closest("[data-insumo],[data-ficha],[data-custo]");if(row?.dataset.ficha){const h=$(".product-head h2",row);if(h)h.textContent=nomeInput.value||"Nova ficha"}}
 }
 function gravarCampo(target,value){
@@ -1145,7 +1203,7 @@ function gravarCampo(target,value){
  if(!row)return;
  if(row.dataset.insumo){const ins=acharInsumo(row.dataset.insumo);if(ins)ins[target.dataset.field]=target.dataset.field==="nome"||target.dataset.field==="unidade"?value:n(value)}
  else if(row.dataset.custo){const c=dados.custos.find(x=>x.id===row.dataset.custo);if(c)c[target.dataset.field]=target.dataset.field==="nome"?value:n(value)}
- else if(row.dataset.ficha){const f=acharFicha(row.dataset.ficha);if(f)f[target.dataset.field]=target.dataset.field==="nome"||target.dataset.field==="categoria"||target.dataset.field==="margem"?value:target.dataset.field==="combo"?target.checked:n(value)}
+ else if(row.dataset.ficha){const f=acharFicha(row.dataset.ficha);if(f)f[target.dataset.field]=["nome","categoria","margem","unidadeSemiAcabado","tipoProduto"].includes(target.dataset.field)?value:target.dataset.field==="combo"?target.checked:n(value)}
  else if(row.dataset.item){const f=dados.fichas.find(x=>x.itens.some(i=>i.id===row.dataset.item)),it=f?.itens.find(i=>i.id===row.dataset.item);if(it)it[target.dataset.field]=target.dataset.field==="quantidade"?n(value):value}
 }
 document.addEventListener("change",e=>{
@@ -1194,7 +1252,9 @@ document.addEventListener("input",e=>{
    return;
  }
  if(!t.matches("[data-field],[data-global]"))return;
- gravarCampo(t,t.type==="checkbox"?t.checked:t.value);salvar();atualizarCalculos();
+ gravarCampo(t,t.type==="checkbox"?t.checked:t.value);
+ if(t.closest("[data-ficha],[data-insumo],[data-item]"))sincronizarInsumosSemiAcabados();
+ salvar();atualizarCalculos();
 });
 $("#form-login").addEventListener("submit",async e=>{
   e.preventDefault();const status=$("#login-status"),botao=$("button[type=submit]",e.currentTarget);
@@ -1370,6 +1430,26 @@ $("#cancelar-importacao-btn").addEventListener("click",()=>{
 });
 document.addEventListener("change",async e=>{
  const t=e.target;
+ if(t.dataset.field==="tipoProduto"){
+   const f=acharFicha(t.closest("[data-ficha]")?.dataset.ficha);
+   if(!f||!TIPOS_PRODUTO.some(([tipo])=>tipo===t.value))return;
+   const deixandoSemi=f.tipoProduto==="semiacabado"&&t.value!=="semiacabado";
+   const temOrdemAberta=dados.ordensProducao.some(o=>o.fichaId===f.id&&["rascunho","em_producao"].includes(o.status));
+   if(deixandoSemi&&(fichaSemiAcabadoUsado(f)||temOrdemAberta)){
+     mensagem(fichaSemiAcabadoUsado(f)?"Este semi-acabado possui referências ou movimentações de estoque. Mantenha-o como semi-acabado para preservar a ficha e o histórico.":"Conclua ou cancele as OPs abertas deste semi-acabado antes de mudar seu tipo.","erro");
+     renderFichas();return;
+   }
+   f.tipoProduto=t.value;f.combo=t.value==="combo";
+   if(f.combo&&f.categoria===dados.categoriaCombo)f.categoria=dados.categoriaCombo;
+   if(!f.combo)f.itens=f.itens.filter(item=>item.tipo!=="ficha");
+   if(f.tipoProduto==="semiacabado"){
+     f.publicadoPdv=false;dados.pedidoPdv=dados.pedidoPdv.filter(item=>item.fichaId!==f.id);
+   }
+   sincronizarInsumosSemiAcabados();salvar();renderTudo();return;
+ }
+ if(t.dataset.field==="unidadeSemiAcabado"){
+   gravarCampo(t,t.value);sincronizarInsumosSemiAcabados();salvar();renderTudo();return;
+ }
  if(t.matches("[data-menu-stock-mode]")){
    const ficha=acharFicha(t.dataset.menuStockMode);
    if(ficha&&["empresa","insumos","produto-pronto"].includes(t.value)){
@@ -1420,12 +1500,6 @@ document.addEventListener("change",async e=>{
    return;
  }
  if(!t.matches("[data-field],[data-global]"))return;
- if(t.dataset.field==="combo"){
-   const f=acharFicha(t.closest("[data-ficha]")?.dataset.ficha);if(!f)return;
-   f.combo=t.checked;f.categoria=t.checked?dados.categoriaCombo:(f.categoria===dados.categoriaCombo?categoriaInicial():f.categoria);
-   if(!f.combo)f.itens=f.itens.filter(it=>it.tipo!=="ficha");
-   salvar();renderTudo();return;
- }
  if(t.dataset.field==="referencia"){
    const card=t.closest("[data-ficha]"),f=acharFicha(card?.dataset.ficha),row=t.closest("[data-item]"),it=f?.itens.find(i=>i.id===row?.dataset.item);if(!it)return;
    if(f.combo&&t.value){const [tipo,id]=t.value.split(":");it.tipo=tipo==="f"?"ficha":"insumo";it.referencia=id;it.unidade=it.tipo==="ficha"?"un":(acharInsumo(id)?.unidade||"un")}
@@ -1599,18 +1673,20 @@ document.addEventListener("click",e=>{
    const mapa=new Map(categoriasRascunho.filter(c=>c.origem!==null).map((c,i)=>[c.origem,nomes[i]]));
    for(const ficha of dados.fichas)if(mapa.has(ficha.categoria))ficha.categoria=mapa.get(ficha.categoria);
    if(mapa.has(dados.categoriaCombo))dados.categoriaCombo=mapa.get(dados.categoriaCombo);
-   if(mapa.has(dados.categoriaFiltro))dados.categoriaFiltro=mapa.get(dados.categoriaFiltro);
    dados.categorias=nomes;
    if(!dados.categorias.includes(dados.categoriaCombo))dados.categoriaCombo=dados.categorias.includes("Combo")?"Combo":dados.categorias[0];
-   if(dados.categoriaFiltro!=="Todas"&&!dados.categorias.includes(dados.categoriaFiltro))dados.categoriaFiltro="Todas";
    categoriasRascunho=null;erroCategorias="";salvar();renderTudo()
  }
  if(act==="novo-insumo"){dados.insumos.push({id:uid(),nome:"Novo insumo",unidade:"un",preco:0,quantidade:1});salvar();renderTudo()}
  if(act==="novo-custo"){dados.custos.push({id:uid(),nome:"Novo custo",valor:0});salvar();renderTudo()}
- if(act==="nova-ficha"||act==="novo-combo"){const combo=act==="novo-combo";const nf={id:uid(),nome:combo?"Novo combo":"Nova ficha",categoria:combo?dados.categoriaCombo:categoriaInicial(),combo,porcoes:1,margem:"",precoAtual:0,publicadoPdv:false,aberta:true,itens:[]};dados.fichas.push(nf);dados.categoriaFiltro="Todas";salvar();renderTudo()}
+ if(act==="nova-ficha"||act==="novo-combo"||act==="novo-semiacabado"){
+   const tipo=act==="novo-combo"?"combo":act==="novo-semiacabado"?"semiacabado":"acabado";
+   const nf={id:uid(),nome:tipo==="combo"?"Novo combo":tipo==="semiacabado"?"Novo semi-acabado":"Novo produto acabado",categoria:tipo==="combo"?dados.categoriaCombo:categoriaInicial(),tipoProduto:tipo,combo:tipo==="combo",unidadeSemiAcabado:"un",porcoes:1,margem:"",precoAtual:0,publicadoPdv:false,aberta:true,itens:[]};
+   dados.fichas.push(nf);dados.categoriaFiltro="Todas";sincronizarInsumosSemiAcabados();salvar();renderTudo();
+ }
  if(act==="novo-item"&&f){f.itens.push({id:uid(),tipo:"insumo",referencia:"",quantidade:1,unidade:"un"});salvar();renderTudo()}
  if(act==="toggle-ficha"&&f){f.aberta=!f.aberta;salvar();renderTudo()}
- if(act==="copiar-ficha"&&f){const clone={...structuredClone(f),id:uid(),nome:`${f.nome} (cópia)`,precoAtual:0,publicadoPdv:false,aberta:true,itens:f.itens.map(it=>({...it,id:uid()}))};dados.fichas.splice(dados.fichas.indexOf(f)+1,0,clone);salvar();renderTudo()}
+ if(act==="copiar-ficha"&&f){const clone={...structuredClone(f),id:uid(),nome:`${f.nome} (cópia)`,insumoSemiAcabadoId:undefined,precoAtual:0,publicadoPdv:false,aberta:true,itens:f.itens.map(it=>({...it,id:uid()}))};dados.fichas.splice(dados.fichas.indexOf(f)+1,0,clone);sincronizarInsumosSemiAcabados();salvar();renderTudo()}
  if(act==="minimizar-todas"||act==="expandir-todas"){dados.fichas.forEach(x=>x.aberta=act==="expandir-todas");salvar();renderTudo()}
  if(act==="filtro"){dados.categoriaFiltro=b.dataset.categoria;salvar();renderFichas()}
  if(act==="mover-item"&&f){const row=b.closest("[data-item]"),i=f.itens.findIndex(x=>x.id===row?.dataset.item),j=i+Number(b.dataset.dir);if(i>=0&&j>=0&&j<f.itens.length){[f.itens[i],f.itens[j]]=[f.itens[j],f.itens[i]];salvar();renderTudo()}}
@@ -1619,7 +1695,7 @@ document.addEventListener("click",e=>{
      if(tipo==="insumo"&&dados.pedidosCompra.some(p=>p.status==="rascunho"&&p.itens?.some(i=>i.insumoId===id))){mensagem("Este insumo está em um pedido de compra pendente. Receba ou conclua o pedido antes de excluí-lo.","erro");return}
      if(tipo==="ficha"&&dados.ordensProducao.some(o=>o.fichaId===id&&["rascunho","em_producao"].includes(o.status))){mensagem("Esta ficha possui uma OP em aberto. Conclua ou cancele a ordem antes de excluí-la.","erro");return}
      if(tipo==="insumo"){dados.insumos=dados.insumos.filter(x=>x.id!==id);dados.fichas.forEach(x=>x.itens=x.itens.filter(it=>!(it.tipo==="insumo"&&it.referencia===id)))}
-     if(tipo==="ficha"){dados.fichas=dados.fichas.filter(x=>x.id!==id);dados.pedidoPdv=dados.pedidoPdv.filter(item=>item.fichaId!==id);dados.fichas.forEach(x=>x.itens=x.itens.filter(it=>!(it.tipo==="ficha"&&it.referencia===id)))}
+     if(tipo==="ficha"){dados.fichas=dados.fichas.filter(x=>x.id!==id);dados.pedidoPdv=dados.pedidoPdv.filter(item=>item.fichaId!==id);dados.fichas.forEach(x=>x.itens=x.itens.filter(it=>!(it.tipo==="ficha"&&it.referencia===id)));sincronizarInsumosSemiAcabados()}
      if(tipo==="item"){const ficha=dados.fichas.find(x=>x.itens.some(it=>it.id===id));if(ficha)ficha.itens=ficha.itens.filter(it=>it.id!==id)}
      if(tipo==="custo")dados.custos=dados.custos.filter(x=>x.id!==id);salvar();renderTudo();return}
    box.innerHTML=`<button class="btn small danger" data-action="pedir-exclusao" data-tipo="${escapeHtml(tipo)}" data-id="${escapeHtml(id)}" data-confirm="sim">Confirmar exclusão</button><button class="btn small" data-action="cancelar-exclusao" data-key="${escapeHtml(key)}">Cancelar</button>`}
