@@ -30,6 +30,7 @@
     .login-create{display:grid;gap:14px}.login-create-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.login-create-companies,.admin-user fieldset{border:1px solid var(--border);border-radius:10px;padding:12px;margin:0;min-width:0}.login-create-companies legend,.admin-user legend{font-weight:650;padding:0 5px}.login-create-companies .check-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px 16px}.login-create-companies .check-option{align-items:flex-start;white-space:normal;overflow-wrap:anywhere}.login-create-actions{display:flex;justify-content:flex-end}.login-create-actions .btn{min-width:min(100%,250px)}
     .change-password-card{max-width:760px;margin:14px 0}.change-password-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end}.change-password-actions{display:flex;gap:8px;grid-column:1/-1;flex-wrap:wrap}.admin-user{border:1px solid var(--border);border-radius:12px;padding:14px;background:var(--surface)}.admin-user h4{grid-column:1/-1}.admin-user-form{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.admin-user-form fieldset{grid-column:1/-1}.admin-user-actions{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}.admin-user .field{max-width:none}.admin-user fieldset .check-list{border:0;padding:4px 0 0}.admin-user-list{gap:12px}
     @media(max-width:700px){.change-password-form{grid-template-columns:1fr 1fr}.admin-user-form{grid-template-columns:1fr}}@media(max-width:480px){.login-create-fields{grid-template-columns:1fr}.login-create-actions .btn{width:100%}.change-password-form{grid-template-columns:1fr}.change-password-actions{grid-column:auto}.admin-user-form h4,.admin-user-form fieldset,.admin-user-actions{grid-column:auto}}
+    .pdv-subpanel{display:none}.pdv-subpanel.active{display:block}.prod-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.prod-kpi{background:var(--surface-2);border-radius:10px;padding:12px}.prod-kpi span{display:block;color:var(--muted);font-size:.82rem}.prod-kpi strong{font-size:1.15rem}.prod-table input,.prod-table select{max-width:150px}.prod-orders{display:grid;gap:12px}.prod-order-card{margin:0}.prod-order-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.prod-order-lines{margin:8px 0;color:var(--muted);font-size:.9rem}.prod-history{max-height:360px;overflow:auto}.prod-mode{min-width:230px}.prod-small{font-size:.84rem}.prod-pill-warning{color:var(--bad);border-color:var(--bad)}@media(max-width:600px){.prod-grid{grid-template-columns:1fr 1fr}.prod-table{overflow:auto}.prod-table table{min-width:680px}}@media(max-width:380px){.prod-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -47,9 +48,6 @@
     </div>
     <nav class="tabs" aria-label="Seções" hidden>
       <button class="tab" data-tab="pdv">1. PDV</button>
-      <button class="tab" data-tab="comanda">1.1. Comanda</button>
-      <button class="tab" data-tab="caixa">1.2. Caixa</button>
-      <button class="tab" data-tab="relatorio">1.3. Relatório</button>
       <button class="tab" data-tab="cardapio">2. Cardápio</button>
       <button class="tab" data-tab="producao">3. Produção</button>
       <button class="tab active" data-tab="ficha-tecnica">4. Ficha Técnica</button>
@@ -85,12 +83,33 @@
         </form>
         <p id="alterar-senha-status" class="muted" role="status"></p>
       </section>
-      <section class="module-panel" id="panel-pdv"></section>
-      <section class="module-panel" id="panel-comanda"></section>
-      <section class="module-panel" id="panel-caixa"></section>
-      <section class="module-panel" id="panel-relatorio"></section>
+      <section class="module-panel" id="panel-pdv-suite">
+        <nav id="pdv-subtabs" class="subtabs" aria-label="Seções do PDV">
+          <button class="subtab active" data-pdv-subtab="pdv">PDV</button>
+          <button class="subtab" data-pdv-subtab="comanda">1.1. Comanda</button>
+          <button class="subtab" data-pdv-subtab="caixa">1.2. Caixa</button>
+          <button class="subtab" data-pdv-subtab="relatorio">1.3. Relatório</button>
+        </nav>
+        <section class="pdv-subpanel active" id="panel-pdv"></section>
+        <section class="pdv-subpanel" id="panel-comanda"></section>
+        <section class="pdv-subpanel" id="panel-caixa"></section>
+        <section class="pdv-subpanel" id="panel-relatorio"></section>
+      </section>
       <section class="module-panel" id="panel-cardapio"></section>
-      <section class="module-panel" id="panel-producao"><div class="card"><h2>Produção</h2><p class="muted">Módulo de produção. Esta área está preparada para acompanhar preparo e pedidos da cozinha.</p></div></section>
+      <section class="module-panel" id="panel-producao">
+        <nav class="subtabs" aria-label="Seções da Produção">
+          <button class="subtab active" data-producao-subtab="painel">Painel</button>
+          <button class="subtab" data-producao-subtab="ordens">Ordens de produção</button>
+          <button class="subtab" data-producao-subtab="estoque">Estoque</button>
+          <button class="subtab" data-producao-subtab="compras">Compras</button>
+          <button class="subtab" data-producao-subtab="parametros">Parâmetros</button>
+        </nav>
+        <section class="panel active" id="panel-producao-painel"></section>
+        <section class="panel" id="panel-producao-ordens"></section>
+        <section class="panel" id="panel-producao-estoque"></section>
+        <section class="panel" id="panel-producao-compras"></section>
+        <section class="panel" id="panel-producao-parametros"></section>
+      </section>
       <section class="module-panel active" id="panel-ficha-tecnica">
         <nav class="subtabs" aria-label="Seções da Ficha Técnica">
           <button class="subtab active" data-subtab="insumos">Insumos</button>
@@ -157,18 +176,24 @@ const ABAS = [
   ["ficha-tecnica", "4. Ficha Técnica"],
   ["configuracao", "5. Configuração"]
 ];
+const ABAS_PRINCIPAIS = ["pdv","cardapio","producao","ficha-tecnica","configuracao"];
 const ABAS_TECNICAS = ["insumos", "fichas", "cmo", "precificacao", "analise"];
+const ABAS_PDV = ["pdv", "comanda", "caixa", "relatorio"];
+const ABAS_PRODUCAO = ["painel", "ordens", "estoque", "compras", "parametros"];
 const UNIDADES = ["g", "kg", "ml", "L", "un"];
 const VERSAO_IMPORTACAO = "hamburgueria-2026-11-v2";
 const uid = () => Math.random().toString(36).slice(2, 10);
 const exemplo = {
   insumos:[],fichas:[],custos:[],faturamento:0,imposto:0,taxas:0,margemPadrao:0,
   chaveApi:"",categorias:[...CATEGORIAS_PADRAO],categoriaCombo:"Combo",categoriaFiltro:"Todas",
-  pedidoPdv:[],vendasPdv:[],comandas:[],caixas:[],ultimaAnalise:"",versaoImportacao:VERSAO_IMPORTACAO
+  pedidoPdv:[],vendasPdv:[],comandas:[],caixas:[],producaoConfig:{},ordensProducao:[],pedidosCompra:[],movimentosEstoque:[],
+  ultimaAnalise:"",versaoImportacao:VERSAO_IMPORTACAO
 };
 let dados = carregarDados();
 let abaAtiva = "ficha-tecnica";
 let subAbaAtiva = "insumos";
+let subAbaPdvAtiva = "pdv";
+let subAbaProducaoAtiva = "painel";
 let categoriasRascunho = null;
 let erroCategorias = "";
 let sessaoSupabase = null;
@@ -236,8 +261,23 @@ function normalizarDados(obj){
     pedidoPdv:Array.isArray(obj.pedidoPdv)?obj.pedidoPdv:[],
     vendasPdv:Array.isArray(obj.vendasPdv)?obj.vendasPdv:[],
     comandas:normalizarComandas(obj.comandas),
-    caixas:normalizarCaixas(obj.caixas)};
-  normalizado.fichas.forEach(f=>{f.publicadoPdv=f.publicadoPdv===true});
+    caixas:normalizarCaixas(obj.caixas),
+    producaoConfig:obj.producaoConfig&&typeof obj.producaoConfig==="object"?{...obj.producaoConfig}:{},
+    ordensProducao:Array.isArray(obj.ordensProducao)?obj.ordensProducao:[],
+    pedidosCompra:Array.isArray(obj.pedidosCompra)?obj.pedidosCompra:[],
+    movimentosEstoque:Array.isArray(obj.movimentosEstoque)?obj.movimentosEstoque.slice(-500):[]};
+  normalizado.insumos.forEach(i=>{
+    i.estoqueAtual=Math.max(0,n(i.estoqueAtual));
+    i.estoqueMinimo=Math.max(0,n(i.estoqueMinimo));
+    i.estoqueAlvo=Math.max(i.estoqueMinimo,n(i.estoqueAlvo));
+  });
+  normalizado.fichas.forEach(f=>{
+    f.publicadoPdv=f.publicadoPdv===true;
+    f.modoEstoque=["insumos","produto-pronto"].includes(f.modoEstoque)?f.modoEstoque:"empresa";
+    f.estoqueAtual=Math.max(0,n(f.estoqueAtual));
+    f.estoqueMinimo=Math.max(0,n(f.estoqueMinimo));
+    f.estoqueAlvo=Math.max(f.estoqueMinimo,n(f.estoqueAlvo));
+  });
   const fichasPorId=new Map(normalizado.fichas.map(f=>[f.id,f]));
   normalizado.pedidoPdv=normalizado.pedidoPdv.filter(item=>fichasPorId.has(item.fichaId)&&n(item.quantidade)>0).map(item=>({
     linhaId:String(item.linhaId||uid()),obs:String(item.obs||"").slice(0,120),fichaId:item.fichaId,nome:String(item.nome||fichasPorId.get(item.fichaId).nome),
@@ -300,16 +340,23 @@ function abaPermitida(nome){
 function atualizarVisibilidadeAbas(){
   $$(".tab").forEach(tab=>{
     const nome=tab.dataset.tab;
-    tab.hidden=!abaPermitida(nome);
+    tab.hidden=nome==="pdv"?!ABAS_PDV.some(abaPermitida):!abaPermitida(nome);
   });
+  $$("[data-pdv-subtab]").forEach(tab=>{tab.hidden=!abaPermitida(tab.dataset.pdvSubtab)});
+  $("#pdv-subtabs").hidden=!ABAS_PDV.some(abaPermitida);
+  $$("#panel-pdv-suite > .pdv-subpanel").forEach(panel=>{panel.hidden=!abaPermitida(panel.id.replace("panel-",""))});
   $$(".module-panel").forEach(panel=>{
     const nome=panel.id.replace("panel-","");
-    panel.hidden=!abaPermitida(nome);
+    panel.hidden=nome==="pdv-suite"?!ABAS_PDV.some(abaPermitida):!abaPermitida(nome);
   });
-  if(!abaPermitida(abaAtiva)){
-    abaAtiva=ABAS.map(([nome])=>nome).find(abaPermitida)||"ficha-tecnica";
+  if(abaAtiva==="pdv"&&!abaPermitida(subAbaPdvAtiva)){
+    subAbaPdvAtiva=ABAS_PDV.find(abaPermitida)||"pdv";
+  }
+  if(!abaPrincipalPermitida(abaAtiva)){
+    abaAtiva=ABAS_PRINCIPAIS.find(abaPrincipalPermitida)||"ficha-tecnica";
   }
 }
+function abaPrincipalPermitida(nome){return nome==="pdv"?ABAS_PDV.some(abaPermitida):abaPermitida(nome)}
 function guardarSessao(session){
   sessaoSupabase=session;
   try{localStorage.setItem("ft1_auth",JSON.stringify(session))}
@@ -516,11 +563,91 @@ function fmt(valor,casas=2){return Number.isFinite(valor)?valor.toLocaleString("
 function mensagem(texto,tipo="notice"){const aviso=document.createElement("div");aviso.className=`notice ${tipo==="erro"?"warning":""}`;aviso.textContent=texto;const main=$("main");main.prepend(aviso);setTimeout(()=>aviso.remove(),5500)}
 function acharInsumo(id){return dados.insumos.find(x=>x.id===id)}
 function acharFicha(id){return dados.fichas.find(x=>x.id===id)}
+function modoEstoqueEmpresa(){
+ const modo=dados.producaoConfig?.modoEstoque;
+ if(modo==="insumos"||modo==="produto-pronto")return modo;
+ const empresa=(empresaSelecionada?.name||"").toLocaleLowerCase("pt-BR");
+ return empresa.includes("casa brava")?"produto-pronto":"insumos";
+}
+function modoEstoqueFicha(ficha){
+ return ficha?.modoEstoque==="insumos"||ficha?.modoEstoque==="produto-pronto"?ficha.modoEstoque:modoEstoqueEmpresa();
+}
 function custoInsumo(insumo){return insumo&&n(insumo.quantidade)>0?n(insumo.preco)/n(insumo.quantidade):0}
 function fatorConversao(origem,destino){
   if(origem===destino)return 1;
   const grupos={g:{"kg":1000},kg:{"g":.001},ml:{"L":1000},L:{"ml":.001},un:{}};
   return grupos[origem]?.[destino]||0;
+}
+function arredQuantidade(valor){return Math.round(valor*1000)/1000}
+function registrarMovimento(tipo,referencia,quantidade,origem,origemId,observacao=""){
+ const item=tipo==="insumo"?acharInsumo(referencia):acharFicha(referencia);
+ if(!item||!Number.isFinite(quantidade)||Math.abs(quantidade)<.0005)return;
+ const saldo=Math.max(0,arredQuantidade(n(item.estoqueAtual)+quantidade));
+ item.estoqueAtual=saldo;
+ dados.movimentosEstoque.push({id:uid(),tipo,referencia,nome:item.nome||"Item sem nome",quantidade:arredQuantidade(quantidade),unidade:tipo==="insumo"?item.unidade:"un",origem,origemId:String(origemId||""),observacao,dataHora:new Date().toISOString()});
+ if(dados.movimentosEstoque.length>500)dados.movimentosEstoque=dados.movimentosEstoque.slice(-500);
+}
+function expandirNecessidadesFicha(ficha,quantidade,pilha=[],necessidades={insumos:new Map(),produtos:new Map()}){
+ if(!ficha||!(quantidade>0))throw new Error("Produto ou quantidade inválida para calcular o consumo.");
+ if(pilha.includes(ficha.id))throw new Error(`Foi encontrada uma referência circular na ficha “${ficha.nome}”.`);
+ if(!ficha.itens.length)throw new Error(`A ficha “${ficha.nome}” não possui ingredientes cadastrados.`);
+ const fatorRendimento=quantidade/Math.max(n(ficha.porcoes),.000001);
+ for(const item of ficha.itens){
+  if(!(n(item.quantidade)>0))throw new Error(`A ficha “${ficha.nome}” possui uma quantidade de ingrediente inválida.`);
+  if(item.tipo==="ficha"){
+   const componente=acharFicha(item.referencia);
+   if(!componente)throw new Error(`A ficha “${ficha.nome}” referencia uma ficha removida.`);
+   const qtd=arredQuantidade(fatorRendimento*n(item.quantidade));
+   if(modoEstoqueFicha(componente)==="produto-pronto"){
+    necessidades.produtos.set(componente.id,(necessidades.produtos.get(componente.id)||0)+qtd);
+   }else expandirNecessidadesFicha(componente,qtd,[...pilha,ficha.id],necessidades);
+   continue;
+  }
+  const insumo=acharInsumo(item.referencia);
+  if(!insumo)throw new Error(`A ficha “${ficha.nome}” referencia um insumo removido.`);
+  const conversao=fatorConversao(insumo.unidade,item.unidade);
+  if(!conversao)throw new Error(`Unidade incompatível para o insumo “${insumo.nome}” na ficha “${ficha.nome}”.`);
+  const usado=arredQuantidade(fatorRendimento*n(item.quantidade)*conversao);
+  necessidades.insumos.set(insumo.id,(necessidades.insumos.get(insumo.id)||0)+usado);
+ }
+ return necessidades;
+}
+function necessidadesVenda(itens){
+ const necessidades={insumos:new Map(),produtos:new Map()};
+ for(const linha of itens||[]){
+  const ficha=acharFicha(linha.fichaId);
+  if(!ficha)throw new Error(`O produto “${linha.nome||"sem nome"}” não está mais cadastrado.`);
+  const quantidade=Math.max(0,n(linha.quantidade));
+  if(!quantidade)throw new Error(`Quantidade inválida para “${ficha.nome}”.`);
+  if(modoEstoqueFicha(ficha)==="produto-pronto"){
+   necessidades.produtos.set(ficha.id,(necessidades.produtos.get(ficha.id)||0)+quantidade);
+  }else expandirNecessidadesFicha(ficha,quantidade,[],necessidades);
+ }
+ return necessidades;
+}
+function listarFaltasEstoque(necessidades){
+ const faltas=[];
+ for(const [id,quantidade] of necessidades.insumos){
+  const item=acharInsumo(id),saldo=n(item?.estoqueAtual);
+  if(!item||saldo+1e-9<quantidade)faltas.push(`${item?.nome||"Insumo removido"}: precisa ${fmt(quantidade,3)} ${item?.unidade||""}, disponível ${fmt(saldo,3)} ${item?.unidade||""}`);
+ }
+ for(const [id,quantidade] of necessidades.produtos){
+  const item=acharFicha(id),saldo=n(item?.estoqueAtual);
+  if(!item||saldo+1e-9<quantidade)faltas.push(`${item?.nome||"Produto removido"}: precisa ${fmt(quantidade,3)} un, disponível ${fmt(saldo,3)} un`);
+ }
+ return faltas;
+}
+function aplicarBaixaEstoque(necessidades,origem,origemId){
+ const faltas=listarFaltasEstoque(necessidades);
+ if(faltas.length)throw new Error(`Estoque insuficiente:\n${faltas.join("\n")}`);
+ for(const [id,quantidade] of necessidades.insumos)registrarMovimento("insumo",id,-quantidade,origem,origemId);
+ for(const [id,quantidade] of necessidades.produtos)registrarMovimento("produto",id,-quantidade,origem,origemId);
+}
+function itemEstoque(tipo,id){return tipo==="insumo"?acharInsumo(id):acharFicha(id)}
+function abaixoEstoqueMinimo(item){return n(item?.estoqueMinimo)>0&&n(item.estoqueAtual)<=n(item.estoqueMinimo)}
+function quantidadeReposicao(item){
+ const alvo=n(item.estoqueAlvo)>0?n(item.estoqueAlvo):n(item.estoqueMinimo);
+ return Math.max(0,arredQuantidade(alvo-n(item.estoqueAtual)));
 }
 function custoItem(item,stack=[]){
   if(item.tipo==="ficha"){
@@ -551,6 +678,9 @@ let comandaPdv="";
 let statusComanda="";
 let confirmacaoComanda="";
 let pagamentoComanda={};
+let statusProducao="";
+let confirmacaoRecebimentoCompra="";
+let confirmacaoOrdemPendente="";
 function acharComanda(id){return dados.comandas.find(c=>c.id===id)}
 let descontoPdv={tipo:"valor",valor:""};
 let statusCaixa="";
@@ -718,7 +848,108 @@ function renderRelatorio(){
 function totalPedidoPdv(){return dados.pedidoPdv.reduce((total,item)=>total+n(item.precoUnitario)*n(item.quantidade),0)}
 function renderCardapio(){
  const painel=$("#panel-cardapio");
- painel.innerHTML=`<div class="toolbar"><div><h2>Cardápio</h2><div class="muted">Escolha quais fichas técnicas estarão disponíveis no PDV e confira o preço de venda.</div></div><label class="field pos-search"><span>Buscar produto</span><input type="search" data-menu-search placeholder="Nome ou categoria"></label></div>${dados.fichas.length?`<div class="menu-grid">${dados.fichas.map(f=>`<article class="card menu-product" data-menu-card data-name="${escapeHtml(f.nome)}" data-category="${escapeHtml(f.categoria)}"><div class="menu-product-head"><div><h3>${escapeHtml(f.nome||"Produto sem nome")}</h3><span class="pill">${escapeHtml(f.categoria)}</span>${f.combo?'<span class="pill">Combo</span>':""}</div><span class="muted">CMV ${moeda(cmvFicha(f))}</span></div><div class="menu-product-photo">${f.imagemCardapio?`<img src="${escapeHtml(f.imagemCardapio)}" alt="Foto de ${escapeHtml(f.nome)}">`:escapeHtml(String(f.nome||"?").trim().slice(0,1).toLocaleUpperCase("pt-BR"))}</div><div class="actions"><label class="btn small">Adicionar foto<input type="file" accept="image/png,image/jpeg,image/webp" data-menu-image="${escapeHtml(f.id)}" hidden></label>${f.imagemCardapio?`<button class="btn small" type="button" data-action="menu-remover-foto" data-id="${escapeHtml(f.id)}">Remover foto</button>`:""}</div><label class="field"><span>Preço de venda (R$)</span><input type="number" min="0" step="0.01" data-menu-price="${escapeHtml(f.id)}" value="${n(f.precoAtual)>0?escapeHtml(f.precoAtual):""}" placeholder="Defina o preço"></label><label class="switch-line"><input class="switch" type="checkbox" data-pdv-visible="${escapeHtml(f.id)}" ${f.publicadoPdv?"checked":""} ${n(f.precoAtual)>0?"":"disabled"}><span>${f.publicadoPdv?"Visível no PDV":"Mostrar no PDV"}</span></label>${n(f.precoAtual)>0?"":'<span class="muted">Informe um preço positivo para ativar no PDV.</span>'}</article>`).join("")}</div>`:'<div class="card empty">Cadastre primeiro as fichas técnicas que deseja vender.</div>'}`;
+ painel.innerHTML=`<div class="toolbar"><div><h2>Cardápio</h2><div class="muted">Escolha quais fichas técnicas estarão disponíveis no PDV, confira o preço e defina como cada produto controla estoque.</div></div><label class="field pos-search"><span>Buscar produto</span><input type="search" data-menu-search placeholder="Nome ou categoria"></label></div>${dados.fichas.length?`<div class="menu-grid">${dados.fichas.map(f=>`<article class="card menu-product" data-menu-card data-name="${escapeHtml(f.nome)}" data-category="${escapeHtml(f.categoria)}"><div class="menu-product-head"><div><h3>${escapeHtml(f.nome||"Produto sem nome")}</h3><span class="pill">${escapeHtml(f.categoria)}</span>${f.combo?'<span class="pill">Combo</span>':""}</div><span class="muted">CMV ${moeda(cmvFicha(f))}</span></div><div class="menu-product-photo">${f.imagemCardapio?`<img src="${escapeHtml(f.imagemCardapio)}" alt="Foto de ${escapeHtml(f.nome)}">`:escapeHtml(String(f.nome||"?").trim().slice(0,1).toLocaleUpperCase("pt-BR"))}</div><div class="actions"><label class="btn small">Adicionar foto<input type="file" accept="image/png,image/jpeg,image/webp" data-menu-image="${escapeHtml(f.id)}" hidden></label>${f.imagemCardapio?`<button class="btn small" type="button" data-action="menu-remover-foto" data-id="${escapeHtml(f.id)}">Remover foto</button>`:""}</div><label class="field"><span>Preço de venda (R$)</span><input type="number" min="0" step="0.01" data-menu-price="${escapeHtml(f.id)}" value="${n(f.precoAtual)>0?escapeHtml(f.precoAtual):""}" placeholder="Defina o preço"></label><label class="field"><span>Consumo de estoque</span><select data-menu-stock-mode="${escapeHtml(f.id)}"><option value="empresa" ${f.modoEstoque==="empresa"?"selected":""}>Usar padrão da empresa</option><option value="insumos" ${f.modoEstoque==="insumos"?"selected":""}>Baixar ingredientes na venda</option><option value="produto-pronto" ${f.modoEstoque==="produto-pronto"?"selected":""}>Baixar produto pronto / usar OP</option></select></label><div class="muted prod-small">Modo atual: ${modoEstoqueFicha(f)==="insumos"?"ingredientes na venda":"produto pronto e reposição por OP"}</div><label class="switch-line"><input class="switch" type="checkbox" data-pdv-visible="${escapeHtml(f.id)}" ${f.publicadoPdv?"checked":""} ${n(f.precoAtual)>0?"":"disabled"}><span>${f.publicadoPdv?"Visível no PDV":"Mostrar no PDV"}</span></label>${n(f.precoAtual)>0?"":'<span class="muted">Informe um preço positivo para ativar no PDV.</span>'}</article>`).join("")}</div>`:'<div class="card empty">Cadastre primeiro as fichas técnicas que deseja vender.</div>'}`;
+}
+function vendasPorFicha(periodoMs){
+ const corte=Date.now()-periodoMs,mapa=new Map();
+ for(const venda of dados.vendasPdv){
+  if(new Date(venda.dataHora).getTime()<corte)continue;
+  for(const item of venda.itens||[])mapa.set(item.fichaId,(mapa.get(item.fichaId)||0)+n(item.quantidade));
+ }
+ return mapa;
+}
+function itensInsumoBaixo(){return dados.insumos.filter(abaixoEstoqueMinimo)}
+function fichasProdutoPronto(){return dados.fichas.filter(f=>modoEstoqueFicha(f)==="produto-pronto")}
+function fichasProdutoBaixo(){return fichasProdutoPronto().filter(abaixoEstoqueMinimo)}
+function quantidadeCompraPendente(insumoId){
+ return dados.pedidosCompra.filter(p=>p.status==="rascunho").flatMap(p=>p.itens||[]).filter(i=>i.insumoId===insumoId).reduce((s,i)=>s+n(i.quantidade),0);
+}
+function quantidadeCompraSugerida(insumo){
+ return Math.max(0,arredQuantidade(quantidadeReposicao(insumo)-quantidadeCompraPendente(insumo.id)));
+}
+function criarOrdemProducao(fichaId,quantidade){
+ const ficha=acharFicha(fichaId),q=Math.floor(n(quantidade));
+ if(!ficha||modoEstoqueFicha(ficha)!=="produto-pronto")throw new Error("Escolha um produto configurado para controle de produto pronto.");
+ if(q<1)throw new Error("Informe uma quantidade de produção maior que zero.");
+ dados.ordensProducao.unshift({id:uid(),numero:String(dados.ordensProducao.length+1).padStart(5,"0"),fichaId:ficha.id,nome:ficha.nome||"Produto",quantidade:q,status:"rascunho",criadaEm:new Date().toISOString(),criadaPor:sessaoSupabase?.username||"local",consumos:[]});
+ statusProducao=`OP criada para ${q} un de ${ficha.nome}. O estoque só será baixado ao iniciar a produção.`;
+ salvar();alternarSubAbaProducao("ordens");
+}
+function iniciarOrdemProducao(id){
+ const ordem=dados.ordensProducao.find(o=>o.id===id);
+ if(!ordem||ordem.status!=="rascunho")return;
+ try{
+  const ficha=acharFicha(ordem.fichaId);
+  if(!ficha||modoEstoqueFicha(ficha)!=="produto-pronto")throw new Error("A ficha foi removida ou não está mais configurada para produzir estoque pronto.");
+  const necessidades=expandirNecessidadesFicha(ficha,ordem.quantidade);
+  aplicarBaixaEstoque(necessidades,"ordem_producao",ordem.id);
+  ordem.consumos=[
+   ...[...necessidades.insumos].map(([referencia,quantidade])=>({tipo:"insumo",referencia,nome:acharInsumo(referencia)?.nome||"Insumo",unidade:acharInsumo(referencia)?.unidade||"un",quantidade})),
+   ...[...necessidades.produtos].map(([referencia,quantidade])=>({tipo:"produto",referencia,nome:acharFicha(referencia)?.nome||"Produto",unidade:"un",quantidade}))
+  ];
+  ordem.status="em_producao";ordem.iniciadaEm=new Date().toISOString();ordem.iniciadaPor=sessaoSupabase?.username||"local";
+  statusProducao=`OP #${ordem.numero} iniciada. Os insumos foram baixados uma única vez.`;
+  confirmacaoOrdemPendente="";salvar();alternarSubAbaProducao("ordens");
+ }catch(erro){statusProducao=erro.message;alternarSubAbaProducao("ordens")}
+}
+function concluirOrdemProducao(id){
+ const ordem=dados.ordensProducao.find(o=>o.id===id);
+ if(!ordem||ordem.status!=="em_producao")return;
+ const ficha=acharFicha(ordem.fichaId);
+ if(!ficha){statusProducao="A ficha da OP foi removida. A ordem não foi concluída; restaure a ficha antes de continuar.";alternarSubAbaProducao("ordens");return}
+ registrarMovimento("produto",ficha.id,n(ordem.quantidade),"conclusao_op",ordem.id,`OP #${ordem.numero}`);
+ ordem.status="concluida";ordem.concluidaEm=new Date().toISOString();ordem.concluidaPor=sessaoSupabase?.username||"local";
+ statusProducao=`OP #${ordem.numero} concluída. ${ordem.quantidade} un adicionadas ao estoque de ${ficha.nome}.`;
+ confirmacaoOrdemPendente="";salvar();alternarSubAbaProducao("ordens");
+}
+function registrarPerdaOrdem(id){
+ const ordem=dados.ordensProducao.find(o=>o.id===id);
+ if(!ordem||ordem.status!=="em_producao")return;
+ ordem.status="perda";ordem.perdaEm=new Date().toISOString();
+ statusProducao=`OP #${ordem.numero} registrada como perda. Os insumos já consumidos não foram estornados; ajuste o saldo se algum material foi recuperado.`;
+ confirmacaoOrdemPendente="";salvar();alternarSubAbaProducao("ordens");
+}
+function receberPedidoCompra(id){
+ const pedido=dados.pedidosCompra.find(p=>p.id===id);
+ if(!pedido||pedido.status!=="rascunho")return;
+ const faltando=pedido.itens.filter(i=>!acharInsumo(i.insumoId));
+ if(faltando.length){statusProducao=`Não é possível receber o pedido: insumo removido (${faltando.map(i=>i.nome).join(", ")}).`;alternarSubAbaProducao("compras");return}
+ for(const item of pedido.itens)registrarMovimento("insumo",item.insumoId,n(item.quantidade),"recebimento_compra",pedido.id,`Pedido #${pedido.numero}`);
+ pedido.status="recebido";pedido.recebidoEm=new Date().toISOString();pedido.recebidoPor=sessaoSupabase?.username||"local";
+ confirmacaoRecebimentoCompra="";statusProducao=`Pedido #${pedido.numero} recebido; o estoque dos insumos foi atualizado.`;
+ salvar();alternarSubAbaProducao("compras");
+}
+function gerarPedidoCompraBaixo(){
+ const itens=itensInsumoBaixo().map(i=>({insumoId:i.id,nome:i.nome,unidade:i.unidade,quantidade:quantidadeCompraSugerida(i),custoUnitario:custoInsumo(i)})).filter(i=>i.quantidade>0);
+ if(!itens.length){statusProducao="Não há itens abaixo do mínimo sem pedido de compra pendente.";alternarSubAbaProducao("compras");return}
+ dados.pedidosCompra.unshift({id:uid(),numero:String(dados.pedidosCompra.length+1).padStart(5,"0"),status:"rascunho",criadaEm:new Date().toISOString(),itens});
+ statusProducao=`Pedido de compra #${dados.pedidosCompra[0].numero} criado como rascunho. O estoque muda somente ao registrar o recebimento.`;
+ salvar();alternarSubAbaProducao("compras");
+}
+function renderProducaoPainel(){
+ const p=$("#panel-producao-painel"),baixos=itensInsumoBaixo(),produtosBaixos=fichasProdutoBaixo(),abertas=dados.ordensProducao.filter(o=>o.status==="em_producao").length,rascunhos=dados.ordensProducao.filter(o=>o.status==="rascunho").length;
+ const vendas=vendasPorFicha(24*60*60*1000),sugestoes=produtosBaixos.map(f=>({ficha:f,qtd:Math.max(1,Math.ceil(Math.max(n(f.estoqueAlvo)-n(f.estoqueAtual),(vendas.get(f.id)||0)-n(f.estoqueAtual))))}));
+ p.innerHTML=`<div class="toolbar"><div><h2>Painel de produção</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Empresa")} · alertas de estoque e vendas atualizados no estado compartilhado.</div></div></div><div class="card"><div class="prod-grid"><div class="prod-kpi"><span>OP em andamento</span><strong>${abertas}</strong></div><div class="prod-kpi"><span>OP em rascunho</span><strong>${rascunhos}</strong></div><div class="prod-kpi"><span>Insumos abaixo do mínimo</span><strong>${baixos.length}</strong></div><div class="prod-kpi"><span>Produtos prontos abaixo do mínimo</span><strong>${produtosBaixos.length}</strong></div></div></div>${statusProducao?`<div class="notice" role="status">${escapeHtml(statusProducao)}</div>`:""}<div class="card"><div class="toolbar"><div><h3>Alertas de estoque</h3><p class="muted">Os insumos baixos geram sugestões de compra; produtos prontos baixos geram sugestões de OP, sem iniciar a produção automaticamente.</p></div><button class="btn primary" type="button" data-action="prod-gerar-pedido" ${baixos.some(i=>quantidadeCompraSugerida(i)>0)?"":"disabled"}>Gerar pedido de compra</button></div>${baixos.length?`<h4>Insumos comprados</h4><div class="table-wrap"><table><thead><tr><th>Insumo</th><th class="numeric">Saldo</th><th class="numeric">Mínimo</th><th class="numeric">Comprar</th></tr></thead><tbody>${baixos.map(i=>`<tr><td>${escapeHtml(i.nome)}</td><td class="numeric">${fmt(n(i.estoqueAtual),3)} ${escapeHtml(i.unidade)}</td><td class="numeric">${fmt(n(i.estoqueMinimo),3)} ${escapeHtml(i.unidade)}</td><td class="numeric">${fmt(quantidadeCompraSugerida(i),3)} ${escapeHtml(i.unidade)}</td></tr>`).join("")}</tbody></table></div>`:'<p class="muted">Nenhum insumo configurado está abaixo do mínimo.</p>'}${sugestoes.length?`<h4>Reposição de produtos e conexão com vendas (últimas 24 h)</h4><div class="table-wrap"><table><thead><tr><th>Produto</th><th class="numeric">Saldo</th><th class="numeric">Vendas</th><th class="numeric">Sugestão de OP</th><th></th></tr></thead><tbody>${sugestoes.map(x=>`<tr><td>${escapeHtml(x.ficha.nome)}</td><td class="numeric">${fmt(n(x.ficha.estoqueAtual),0)} un</td><td class="numeric">${fmt(vendas.get(x.ficha.id)||0,0)} un</td><td class="numeric">${x.qtd} un</td><td><button class="btn small" type="button" data-action="prod-criar-sugestao" data-ficha="${escapeHtml(x.ficha.id)}" data-quantidade="${x.qtd}">Criar OP</button></td></tr>`).join("")}</tbody></table></div>`:'<p class="muted">Sem produto pronto abaixo do mínimo. As vendas registradas alimentam esta sugestão automaticamente, sem criar OP sem aprovação.</p>'}</div><div class="card"><h3>Fluxo ativo</h3><p>${modoEstoqueEmpresa()==="insumos"?"Padrão da empresa: cada venda baixa os ingredientes da ficha. Produtos podem sobrescrever esta regra no Cardápio.":"Padrão da empresa: cada venda baixa o saldo de produto pronto; a OP baixa ingredientes ao iniciar e adiciona o produto ao concluir. Produtos podem sobrescrever esta regra no Cardápio."}</p><p class="footer-note">O saldo inicial deve ser informado na aba Estoque. Pedidos de compra só aumentam o saldo após o recebimento registrado.</p></div>`;
+}
+function renderOrdensProducao(){
+ const p=$("#panel-producao-ordens"),opcoes=fichasProdutoPronto(),ativas=dados.ordensProducao.filter(o=>["rascunho","em_producao"].includes(o.status)),historico=dados.ordensProducao.filter(o=>!["rascunho","em_producao"].includes(o.status));
+ const fmtData=iso=>{const dt=new Date(iso);return Number.isNaN(dt.getTime())?"—":dt.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})};
+ const card=o=>`<article class="card prod-order-card"><div class="prod-order-head"><div><h3>OP #${escapeHtml(o.numero)} · ${escapeHtml(o.nome)}</h3><span class="muted">${o.quantidade} un · ${o.status==="rascunho"?"Rascunho":o.status==="em_producao"?"Em produção":o.status==="concluida"?"Concluída":o.status==="cancelada"?"Cancelada":"Perda registrada"} · criada ${fmtData(o.criadaEm)}</span></div><div class="actions">${o.status==="rascunho"?(confirmacaoOrdemPendente===`cancelar:${o.id}`?`<button class="btn danger" type="button" data-action="prod-confirmar-cancelamento-op" data-id="${escapeHtml(o.id)}">Confirmar cancelamento</button><button class="btn" type="button" data-action="prod-voltar-op">Voltar</button>`:`<button class="btn primary" type="button" data-action="prod-iniciar-op" data-id="${escapeHtml(o.id)}">Abrir OP / iniciar</button><button class="btn danger" type="button" data-action="prod-cancelar-op" data-id="${escapeHtml(o.id)}">Cancelar rascunho</button>`):""}${o.status==="em_producao"?(confirmacaoOrdemPendente===`perda:${o.id}`?`<button class="btn danger" type="button" data-action="prod-confirmar-perda-op" data-id="${escapeHtml(o.id)}">Confirmar perda</button><button class="btn" type="button" data-action="prod-voltar-op">Voltar</button>`:`<button class="btn primary" type="button" data-action="prod-concluir-op" data-id="${escapeHtml(o.id)}">Concluir e adicionar ao estoque</button><button class="btn danger" type="button" data-action="prod-perda-op" data-id="${escapeHtml(o.id)}">Registrar perda</button>`):""}</div></div><div class="prod-order-lines">${o.consumos?.length?`Baixa realizada: ${o.consumos.map(x=>`${escapeHtml(x.nome)} ${fmt(x.quantidade,3)} ${escapeHtml(x.unidade)}`).join(" · ")}`:"Rascunho: nenhum estoque foi movimentado."}</div></article>`;
+ p.innerHTML=`<div class="toolbar"><div><h2>Ordens de produção</h2><div class="muted">Rascunho → iniciar (baixa insumos uma vez) → concluir (adiciona produto pronto ao estoque).</div></div></div>${statusProducao?`<div class="notice" role="status">${escapeHtml(statusProducao)}</div>`:""}<form id="form-criar-op" class="card grid"><label class="field"><span>Produto / ficha técnica</span><select name="ficha" required ${opcoes.length?"":"disabled"}>${opcoes.map(f=>`<option value="${escapeHtml(f.id)}">${escapeHtml(f.nome)}</option>`).join("")}</select></label><label class="field"><span>Quantidade a produzir (un)</span><input name="quantidade" type="number" min="1" step="1" value="1" required ${opcoes.length?"":"disabled"}></label><button class="btn primary" type="submit" ${opcoes.length?"":"disabled"}>Criar OP em rascunho</button>${opcoes.length?"":'<p class="notice">Nenhuma ficha está no modo “produto pronto”. Ajuste o padrão da empresa ou a ficha na aba Cardápio.</p>'}</form><div class="prod-orders">${ativas.map(card).join("")||'<div class="card empty">Nenhuma OP em aberto.</div>'}</div><details class="card"><summary>Histórico de produção (${historico.length})</summary><div class="prod-orders" style="margin-top:12px">${historico.map(card).join("")||'<p class="muted">Ainda não há ordens concluídas ou canceladas.</p>'}</div></details>`;
+}
+function renderEstoqueProducao(){
+ const p=$("#panel-producao-estoque"),prontos=fichasProdutoPronto(),movimentos=[...dados.movimentosEstoque].reverse().slice(0,30);
+ const linhas=(itens,tipo)=>itens.map(item=>`<tr><td>${escapeHtml(item.nome||"Item sem nome")}</td><td>${escapeHtml(item.unidade||"un")}</td><td><input class="cell-input" type="number" min="0" step="${item.unidade==="un"?"1":"0.001"}" data-stock-edit data-stock-kind="${tipo}" data-stock-id="${escapeHtml(item.id)}" data-stock-field="estoqueAtual" value="${n(item.estoqueAtual)}" aria-label="Saldo de ${escapeHtml(item.nome)}"></td><td><input class="cell-input" type="number" min="0" step="${item.unidade==="un"?"1":"0.001"}" data-stock-edit data-stock-kind="${tipo}" data-stock-id="${escapeHtml(item.id)}" data-stock-field="estoqueMinimo" value="${n(item.estoqueMinimo)}" aria-label="Mínimo de ${escapeHtml(item.nome)}"></td><td><input class="cell-input" type="number" min="0" step="${item.unidade==="un"?"1":"0.001"}" data-stock-edit data-stock-kind="${tipo}" data-stock-id="${escapeHtml(item.id)}" data-stock-field="estoqueAlvo" value="${n(item.estoqueAlvo)}" aria-label="Alvo de ${escapeHtml(item.nome)}"></td><td>${abaixoEstoqueMinimo(item)?'<span class="pill prod-pill-warning">Abaixo do mínimo</span>':'<span class="pill">Normal</span>'}</td></tr>`).join("");
+ p.innerHTML=`<div class="toolbar"><div><h2>Estoque</h2><div class="muted">Informe o saldo físico inicial e configure mínimo e alvo. Alterações de saldo ficam registradas.</div></div></div>${statusProducao?`<div class="notice" role="status">${escapeHtml(statusProducao)}</div>`:""}<div class="card"><h3>Insumos e itens comprados</h3>${dados.insumos.length?`<div class="table-wrap prod-table"><table><thead><tr><th>Insumo</th><th>Unidade</th><th>Saldo atual</th><th>Mínimo para alerta</th><th>Estoque alvo</th><th>Situação</th></tr></thead><tbody>${linhas(dados.insumos,"insumo")}</tbody></table></div>`:'<p class="muted">Cadastre insumos na aba Ficha Técnica → Insumos.</p>'}</div><div class="card"><h3>Produtos prontos</h3><p class="muted">Apenas fichas no modo “produto pronto” têm saldo de produto acabado.</p>${prontos.length?`<div class="table-wrap prod-table"><table><thead><tr><th>Produto</th><th>Unidade</th><th>Saldo atual</th><th>Mínimo para alerta</th><th>Estoque alvo</th><th>Situação</th></tr></thead><tbody>${linhas(prontos,"produto")}</tbody></table></div>`:'<p class="muted">Nenhum produto pronto configurado.</p>'}</div><details class="card"><summary>Movimentações recentes (${movimentos.length})</summary>${movimentos.length?`<div class="table-wrap prod-history"><table><thead><tr><th>Data</th><th>Item</th><th>Movimento</th><th>Origem</th><th>Observação</th></tr></thead><tbody>${movimentos.map(m=>`<tr><td>${new Date(m.dataHora).toLocaleString("pt-BR")}</td><td>${escapeHtml(m.nome)}</td><td class="${n(m.quantidade)<0?"bad":"good"}">${n(m.quantidade)>0?"+":""}${fmt(n(m.quantidade),3)} ${escapeHtml(m.unidade)}</td><td>${escapeHtml(m.origem)}</td><td>${escapeHtml(m.observacao||"")}</td></tr>`).join("")}</tbody></table></div>`:'<p class="muted">As movimentações aparecerão aqui.</p>'}</details>`;
+}
+function renderComprasProducao(){
+ const p=$("#panel-producao-compras"),pendentes=dados.pedidosCompra.filter(o=>o.status==="rascunho");
+ const card=o=>`<article class="card prod-order-card"><div class="prod-order-head"><div><h3>Pedido #${escapeHtml(o.numero)} · ${o.status==="rascunho"?"Aguardando recebimento":"Recebido"}</h3><span class="muted">Criado ${new Date(o.criadaEm).toLocaleString("pt-BR")}</span></div>${o.status==="rascunho"?(confirmacaoRecebimentoCompra===o.id?`<div class="actions"><button class="btn primary" type="button" data-action="prod-confirmar-recebimento" data-id="${escapeHtml(o.id)}">Confirmar recebimento</button><button class="btn" type="button" data-action="prod-cancelar-recebimento">Voltar</button></div>`:`<button class="btn primary" type="button" data-action="prod-receber-compra" data-id="${escapeHtml(o.id)}">Registrar recebimento</button>`):""}</div><div class="table-wrap"><table><thead><tr><th>Insumo</th><th class="numeric">Quantidade</th><th class="numeric">Custo unitário estimado</th><th class="numeric">Subtotal estimado</th></tr></thead><tbody>${o.itens.map(i=>`<tr><td>${escapeHtml(i.nome)}</td><td class="numeric">${fmt(n(i.quantidade),3)} ${escapeHtml(i.unidade)}</td><td class="numeric">${moeda(n(i.custoUnitario))}</td><td class="numeric">${moeda(n(i.quantidade)*n(i.custoUnitario))}</td></tr>`).join("")}</tbody></table></div>${o.status==="rascunho"?'<p class="footer-note">O saldo do estoque só será aumentado após confirmar o recebimento físico.</p>':`<p class="footer-note">Recebido em ${new Date(o.recebidoEm).toLocaleString("pt-BR")}.</p>`}</article>`;
+ p.innerHTML=`<div class="toolbar"><div><h2>Compras</h2><div class="muted">Sugestões com base no mínimo e estoque alvo dos insumos; o recebimento atualiza o estoque.</div></div><button class="btn primary" type="button" data-action="prod-gerar-pedido" ${itensInsumoBaixo().some(i=>quantidadeCompraSugerida(i)>0)?"":"disabled"}>Gerar pedido dos itens baixos</button></div>${statusProducao?`<div class="notice" role="status">${escapeHtml(statusProducao)}</div>`:""}${dados.pedidosCompra.length?`<div class="prod-orders">${dados.pedidosCompra.map(card).join("")}</div>`:'<div class="card empty">Nenhum pedido de compra. Configure estoque mínimo e alvo para os insumos na aba Estoque.</div>'}<p class="footer-note">${pendentes.length} pedido(s) aguardando recebimento. O aplicativo não envia pedidos diretamente a fornecedores.</p>`;
+}
+function renderParametrosProducao(){
+ const p=$("#panel-producao-parametros"),modo=modoEstoqueEmpresa();
+ p.innerHTML=`<div class="toolbar"><div><h2>Parâmetros de produção</h2><div class="muted">O padrão é aplicado às fichas configuradas como “Usar padrão da empresa”.</div></div></div><div class="card"><label class="field prod-mode"><span>Modelo de estoque desta empresa</span><select data-prod-config="modoEstoque"><option value="insumos" ${modo==="insumos"?"selected":""}>Produção na hora: venda baixa ingredientes</option><option value="produto-pronto" ${modo==="produto-pronto"?"selected":""}>Produção em lote: venda baixa produto pronto</option></select></label><div class="notice">${modo==="insumos"?"Cada venda valida e baixa os ingredientes da ficha. Use OP apenas em fichas que tenham exceção para produto pronto.":"A venda baixa o produto acabado; iniciar uma OP baixa ingredientes e concluir a OP repõe o produto acabado."}</div><p>O padrão inicial é <strong>ingredientes na venda</strong> para Riquinhos Fire &amp; Roast e empresas não configuradas, e <strong>produto pronto com OP</strong> para CASA BRAVA. Você pode alterar este padrão por empresa.</p><p>Para exceções, abra Cardápio e escolha o modo de estoque de cada ficha. O sistema bloqueia vendas e início de OP sem saldo suficiente; o saldo inicial deve ser conferido e cadastrado manualmente na aba Estoque.</p><p class="footer-note">Vendas e movimentações de estoque são sincronizadas junto aos dados existentes da empresa. O histórico mantém as 500 movimentações mais recentes.</p></div>`;
 }
 async function comprimirImagemCardapio(arquivo){
  if(!["image/png","image/jpeg","image/webp"].includes(arquivo.type))throw new Error("Escolha uma imagem PNG, JPG ou WebP.");
@@ -756,24 +987,43 @@ function renderTudo(){
  alternarAba(abaAtiva);
 }
 function alternarAba(nome){
- if(!abaPermitida(nome))return;
- abaAtiva=nome;
- $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===nome));
- $$(".module-panel").forEach(p=>p.classList.toggle("active",p.id===`panel-${nome}`));
- if(nome==="pdv")renderPdv();
- if(nome==="comanda")renderComanda();
- if(nome==="caixa")renderCaixa();
- if(nome==="relatorio")renderRelatorio();
- if(nome==="cardapio")renderCardapio();
- if(nome==="ficha-tecnica")alternarSubAba(subAbaAtiva);
+ if(ABAS_PDV.includes(nome)){
+  if(!abaPermitida(nome))return;
+  abaAtiva="pdv";subAbaPdvAtiva=nome;
+ }else{
+  if(!ABAS_PRINCIPAIS.includes(nome)||!abaPrincipalPermitida(nome))return;
+  abaAtiva=nome;
+ }
+ $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===abaAtiva));
+ $$(".module-panel").forEach(p=>p.classList.toggle("active",p.id===`panel-${abaAtiva}-suite`||p.id===`panel-${abaAtiva}`));
+ if(abaAtiva==="pdv")alternarSubAbaPdv(subAbaPdvAtiva);
+ if(abaAtiva==="cardapio")renderCardapio();
+ if(abaAtiva==="producao")alternarSubAbaProducao(subAbaProducaoAtiva);
+ if(abaAtiva==="ficha-tecnica")alternarSubAba(subAbaAtiva);
+}
+function alternarSubAbaPdv(nome){
+ if(!ABAS_PDV.includes(nome)||!abaPermitida(nome))return;
+ subAbaPdvAtiva=nome;
+ const renderers={pdv:renderPdv,comanda:renderComanda,caixa:renderCaixa,relatorio:renderRelatorio};
+ renderers[nome]();
+ $$("[data-pdv-subtab]").forEach(b=>b.classList.toggle("active",b.dataset.pdvSubtab===nome));
+ $$("#panel-pdv-suite > .pdv-subpanel").forEach(p=>p.classList.toggle("active",p.id===`panel-${nome}`));
 }
 function alternarSubAba(nome){
  if(!ABAS_TECNICAS.includes(nome)||!abaPermitida("ficha-tecnica"))return;
  subAbaAtiva=nome;
  const renderers={insumos:renderInsumos,fichas:renderFichas,cmo:renderCmo,precificacao:renderPrecificacao,analise:renderAnalise};
  renderers[nome]();
- $$(".subtab").forEach(b=>b.classList.toggle("active",b.dataset.subtab===nome));
+ $$("[data-subtab]").forEach(b=>b.classList.toggle("active",b.dataset.subtab===nome));
  $$("#panel-ficha-tecnica > .panel").forEach(p=>p.classList.toggle("active",p.id===`panel-${nome}`));
+}
+function alternarSubAbaProducao(nome){
+ if(!ABAS_PRODUCAO.includes(nome)||!abaPermitida("producao"))return;
+ subAbaProducaoAtiva=nome;
+ const renderers={painel:renderProducaoPainel,ordens:renderOrdensProducao,estoque:renderEstoqueProducao,compras:renderComprasProducao,parametros:renderParametrosProducao};
+ renderers[nome]();
+ $$("[data-producao-subtab]").forEach(b=>b.classList.toggle("active",b.dataset.producaoSubtab===nome));
+ $$("#panel-producao > .panel").forEach(p=>p.classList.toggle("active",p.id===`panel-producao-${nome}`));
 }
 function renderInsumos(){
   const p=$("#panel-insumos");
@@ -1120,6 +1370,34 @@ $("#cancelar-importacao-btn").addEventListener("click",()=>{
 });
 document.addEventListener("change",async e=>{
  const t=e.target;
+ if(t.matches("[data-menu-stock-mode]")){
+   const ficha=acharFicha(t.dataset.menuStockMode);
+   if(ficha&&["empresa","insumos","produto-pronto"].includes(t.value)){
+     ficha.modoEstoque=t.value;salvar();renderCardapio();
+     if(abaAtiva==="producao")alternarSubAbaProducao(subAbaProducaoAtiva);
+   }
+   return;
+ }
+ if(t.matches("[data-prod-config='modoEstoque']")){
+   if(!dados.producaoConfig||typeof dados.producaoConfig!=="object")dados.producaoConfig={};
+   dados.producaoConfig.modoEstoque=t.value==="produto-pronto"?"produto-pronto":"insumos";
+   salvar();renderParametrosProducao();renderCardapio();return;
+ }
+ if(t.matches("[data-stock-edit]")){
+   const tipo=t.dataset.stockKind,item=itemEstoque(tipo,t.dataset.stockId),campo=t.dataset.stockField;
+   if(!item||!["estoqueAtual","estoqueMinimo","estoqueAlvo"].includes(campo))return;
+   const valor=Math.max(0,n(t.value)),anterior=n(item[campo]);
+   if(campo==="estoqueAtual"){
+     const diferenca=arredQuantidade(valor-anterior);
+     if(diferenca){
+       registrarMovimento(tipo,item.id,diferenca,item.estoqueInicializado?"ajuste_manual":"saldo_inicial",uid(),item.estoqueInicializado?"Ajuste manual de saldo":"Cadastro do saldo inicial");
+       item.estoqueInicializado=true;
+     }
+   }
+   item[campo]=valor;
+   if(campo==="estoqueMinimo"&&n(item.estoqueAlvo)<valor)item.estoqueAlvo=valor;
+   salvar();renderEstoqueProducao();return;
+ }
  if(t.matches("[data-menu-image]")){
    const arquivo=t.files?.[0],ficha=acharFicha(t.dataset.menuImage);t.value="";
    if(!arquivo||!ficha)return;
@@ -1157,11 +1435,40 @@ document.addEventListener("change",async e=>{
  if(t.dataset.field==="unidade"){gravarCampo(t,t.value);salvar();actualizarNoRebuild();return}
  if(t.matches("select")){gravarCampo(t,t.value);salvar();if(t.dataset.field==="categoria")renderTudo();else atualizarCalculos()}
 });
+document.addEventListener("submit",e=>{
+ if(e.target.id!=="form-criar-op")return;
+ e.preventDefault();
+ const form=e.target;
+ try{criarOrdemProducao(form.elements.ficha.value,form.elements.quantidade.value)}
+ catch(erro){statusProducao=erro.message;alternarSubAbaProducao("ordens")}
+});
 function actualizarNoRebuild(){atualizarCalculos()}
 document.addEventListener("click",e=>{
  const subtab=e.target.closest("[data-subtab]");if(subtab){alternarSubAba(subtab.dataset.subtab);return}
+ const pdvSubtab=e.target.closest("[data-pdv-subtab]");if(pdvSubtab){alternarSubAbaPdv(pdvSubtab.dataset.pdvSubtab);return}
+ const producaoSubtab=e.target.closest("[data-producao-subtab]");if(producaoSubtab){alternarSubAbaProducao(producaoSubtab.dataset.producaoSubtab);return}
  const tab=e.target.closest("[data-tab]");if(tab){alternarAba(tab.dataset.tab);return}
  const b=e.target.closest("[data-action]");if(!b)return;const act=b.dataset.action,card=b.closest("[data-ficha]"),f=acharFicha(card?.dataset.ficha);
+ if(act==="prod-gerar-pedido"){gerarPedidoCompraBaixo();return}
+ if(act==="prod-criar-sugestao"){
+   try{criarOrdemProducao(b.dataset.ficha,b.dataset.quantidade)}
+   catch(erro){statusProducao=erro.message;alternarSubAbaProducao("painel")}
+   return;
+ }
+ if(act==="prod-iniciar-op"){iniciarOrdemProducao(b.dataset.id);return}
+ if(act==="prod-concluir-op"){concluirOrdemProducao(b.dataset.id);return}
+ if(act==="prod-cancelar-op"){confirmacaoOrdemPendente=`cancelar:${b.dataset.id}`;renderOrdensProducao();return}
+ if(act==="prod-confirmar-cancelamento-op"){
+   const ordem=dados.ordensProducao.find(o=>o.id===b.dataset.id);
+   if(ordem?.status==="rascunho"){ordem.status="cancelada";ordem.canceladaEm=new Date().toISOString();statusProducao=`OP #${ordem.numero} cancelada sem movimentar estoque.`;salvar()}
+   confirmacaoOrdemPendente="";renderOrdensProducao();return;
+ }
+ if(act==="prod-perda-op"){confirmacaoOrdemPendente=`perda:${b.dataset.id}`;renderOrdensProducao();return}
+ if(act==="prod-confirmar-perda-op"){registrarPerdaOrdem(b.dataset.id);return}
+ if(act==="prod-voltar-op"){confirmacaoOrdemPendente="";renderOrdensProducao();return}
+ if(act==="prod-receber-compra"){confirmacaoRecebimentoCompra=b.dataset.id;renderComprasProducao();return}
+ if(act==="prod-confirmar-recebimento"){receberPedidoCompra(b.dataset.id);return}
+ if(act==="prod-cancelar-recebimento"){confirmacaoRecebimentoCompra="";renderComprasProducao();return}
  if(act==="pdv-adicionar"){
    const produto=acharFicha(b.dataset.id);
    if(!produto||!produto.publicadoPdv||n(produto.precoAtual)<=0)return;
@@ -1223,6 +1530,8 @@ document.addEventListener("click",e=>{
      if(!caixa){statusComanda="Abra o caixa na aba 1.2. Caixa antes de registrar vendas.";renderComanda();return}
      const subtotal=totalComanda(c),desconto=calcDesconto(subtotal,c.desconto),total=arred(subtotal-desconto);
      const venda={id:uid(),numero:String(dados.vendasPdv.length+1).padStart(6,"0"),dataHora:new Date().toISOString(),empresa:empresaSelecionada?.name||"Dados locais",formaPagamento:pagamentoComanda[c.id]||"Pix",subtotal,desconto,total,caixaId:caixa.id,comanda:c.identificador,itens:c.itens.map(({fichaId,nome,precoUnitario,quantidade,obs})=>({fichaId,nome,precoUnitario,quantidade,obs:obs||""}))};
+     try{aplicarBaixaEstoque(necessidadesVenda(venda.itens),"venda",venda.id)}
+     catch(erro){statusComanda=erro.message;renderComanda();return}
      dados.vendasPdv.push(venda);dados.comandas=dados.comandas.filter(x=>x.id!==c.id);delete pagamentoComanda[c.id];confirmacaoComanda="";
      statusComanda=`Comanda ${c.identificador} fechada: venda #${venda.numero} registrada. Confira o recebimento do pagamento.`;
      salvar();renderComanda();if(abaPermitida("pdv"))renderPdv();if(abaPermitida("caixa"))renderCaixa();return;
@@ -1235,6 +1544,8 @@ document.addEventListener("click",e=>{
    if(!caixa){statusPdv="Abra o caixa na aba 1.2. Caixa antes de registrar vendas.";renderPdv();return}
    const subtotal=totalPedidoPdv(),desconto=calcDesconto(subtotal,descontoPdv),total=arred(subtotal-desconto);
    const venda={id:uid(),numero:String(dados.vendasPdv.length+1).padStart(6,"0"),dataHora:new Date().toISOString(),empresa:empresaSelecionada?.name||"Dados locais",formaPagamento:pagamentoPdv,subtotal,desconto,total,caixaId:caixa.id,itens:dados.pedidoPdv.map(({fichaId,nome,precoUnitario,quantidade,obs})=>({fichaId,nome,precoUnitario,quantidade,obs:String(obs||"").trim()}))};
+   try{aplicarBaixaEstoque(necessidadesVenda(venda.itens),"venda",venda.id)}
+   catch(erro){statusPdv=erro.message;renderPdv();return}
    dados.vendasPdv.push(venda);dados.pedidoPdv=[];remocaoPdvPendente="";descontoPdv={tipo:"valor",valor:""};
    statusPdv=`Venda #${venda.numero} registrada no histórico. Confira o recebimento do pagamento.`;salvar();renderPdv();if(abaPermitida("caixa"))renderCaixa();return;
  }
@@ -1304,7 +1615,10 @@ document.addEventListener("click",e=>{
  if(act==="filtro"){dados.categoriaFiltro=b.dataset.categoria;salvar();renderFichas()}
  if(act==="mover-item"&&f){const row=b.closest("[data-item]"),i=f.itens.findIndex(x=>x.id===row?.dataset.item),j=i+Number(b.dataset.dir);if(i>=0&&j>=0&&j<f.itens.length){[f.itens[i],f.itens[j]]=[f.itens[j],f.itens[i]];salvar();renderTudo()}}
  if(act==="pedir-exclusao"){const tipo=b.dataset.tipo,id=b.dataset.id,key=`${tipo}-${id}`,box=b.closest(".delete-box");
-   if(b.dataset.confirm==="sim"){if(tipo==="insumo"){dados.insumos=dados.insumos.filter(x=>x.id!==id);dados.fichas.forEach(x=>x.itens=x.itens.filter(it=>!(it.tipo==="insumo"&&it.referencia===id)))}
+   if(b.dataset.confirm==="sim"){
+     if(tipo==="insumo"&&dados.pedidosCompra.some(p=>p.status==="rascunho"&&p.itens?.some(i=>i.insumoId===id))){mensagem("Este insumo está em um pedido de compra pendente. Receba ou conclua o pedido antes de excluí-lo.","erro");return}
+     if(tipo==="ficha"&&dados.ordensProducao.some(o=>o.fichaId===id&&["rascunho","em_producao"].includes(o.status))){mensagem("Esta ficha possui uma OP em aberto. Conclua ou cancele a ordem antes de excluí-la.","erro");return}
+     if(tipo==="insumo"){dados.insumos=dados.insumos.filter(x=>x.id!==id);dados.fichas.forEach(x=>x.itens=x.itens.filter(it=>!(it.tipo==="insumo"&&it.referencia===id)))}
      if(tipo==="ficha"){dados.fichas=dados.fichas.filter(x=>x.id!==id);dados.pedidoPdv=dados.pedidoPdv.filter(item=>item.fichaId!==id);dados.fichas.forEach(x=>x.itens=x.itens.filter(it=>!(it.tipo==="ficha"&&it.referencia===id)))}
      if(tipo==="item"){const ficha=dados.fichas.find(x=>x.itens.some(it=>it.id===id));if(ficha)ficha.itens=ficha.itens.filter(it=>it.id!==id)}
      if(tipo==="custo")dados.custos=dados.custos.filter(x=>x.id!==id);salvar();renderTudo();return}
@@ -1345,7 +1659,6 @@ function baixarRelatorio(){
  const html=`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Relatório — Ficha Técnica &amp; Precificação</title><style>:root{font:15px/1.6 system-ui,sans-serif;color:#292524;background:#fff}body{max-width:1000px;margin:30px auto;padding:0 18px}h1,h2,h3{color:#9a3412}table{width:100%;border-collapse:collapse;margin:12px 0}td,th{border:1px solid #ddd;padding:7px;text-align:left}.stat-grid{display:flex;gap:10px;flex-wrap:wrap}.stat{background:#fff7ed;border-radius:8px;padding:12px;min-width:130px}.stat span{display:block;color:#666;font-size:12px}.bar-row{display:grid;grid-template-columns:160px 1fr 90px;gap:10px;align-items:center;margin:8px 0}.bar-track{height:13px;background:#eee;border-radius:8px}.bar{height:100%;background:#c2410c;border-radius:8px}.goodbar{background:#15803d}.badbar{background:#b91c1c}.muted{color:#666}.footer-note{color:#666}@media print{body{margin:0;max-width:none}}</style><h1>Ficha Técnica &amp; Precificação — Relatório</h1><p>Dados do negócio: ${new Date().toLocaleString("pt-BR")}</p>${graficos}<h2>Relatório com IA</h2><div class="report">${rel}</div></html>`;
  const blob=new Blob([html],{type:"text/html;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="relatorio-hamburgueria.html";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-$$(".tab").forEach(b=>b.addEventListener("click",()=>alternarAba(b.dataset.tab)));
 iniciarAplicativo();
 </script>
 </body>
