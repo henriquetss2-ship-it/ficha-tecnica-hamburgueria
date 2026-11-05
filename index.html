@@ -27,6 +27,9 @@
     .pos-discount{display:grid;grid-template-columns:auto 76px minmax(0,1fr);gap:8px;align-items:center;margin:12px 0 0}.pos-discount label{font-weight:650;font-size:.9rem}.pos-discount select,.pos-discount input,.line-obs{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 9px;color:var(--text);min-width:0;width:100%}.line-obs{margin-top:6px;font-size:.84rem;padding:5px 8px}.pos-cart-line>div:first-child{min-width:0}
     .caixa-form{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}.caixa-form .field{max-width:240px;flex:1}.caixa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;align-items:start}.caixa-grid .card{margin:0;display:grid;gap:10px}.caixa-grid .card h3{margin:0}.caixa-hist-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:.9rem}.caixa-hist-valor{text-align:right;white-space:nowrap}
     .rel-filtros{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}.rel-filtros .field{min-width:130px}.rel-filtros .filters{margin-bottom:0}.rel-chart-wrap{overflow-x:auto;margin-top:12px}.rel-chart{display:block;width:100%;min-width:640px;height:auto}.rel-chart text{fill:var(--muted);font-size:11px}.rel-chart .rel-grid{stroke:var(--border);stroke-width:1}.rel-chart .rel-col{fill:var(--accent)}.rel-chart .rel-col:hover{opacity:.8}
+    .login-create{display:grid;gap:14px}.login-create-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.login-create-companies,.admin-user fieldset{border:1px solid var(--border);border-radius:10px;padding:12px;margin:0;min-width:0}.login-create-companies legend,.admin-user legend{font-weight:650;padding:0 5px}.login-create-companies .check-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px 16px}.login-create-companies .check-option{align-items:flex-start;white-space:normal;overflow-wrap:anywhere}.login-create-actions{display:flex;justify-content:flex-end}.login-create-actions .btn{min-width:min(100%,250px)}
+    .change-password-card{max-width:760px;margin:14px 0}.change-password-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end}.change-password-actions{display:flex;gap:8px;grid-column:1/-1;flex-wrap:wrap}.admin-user{border:1px solid var(--border);border-radius:12px;padding:14px;background:var(--surface)}.admin-user h4{grid-column:1/-1}.admin-user-form{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.admin-user-form fieldset{grid-column:1/-1}.admin-user-actions{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}.admin-user .field{max-width:none}.admin-user fieldset .check-list{border:0;padding:4px 0 0}.admin-user-list{gap:12px}
+    @media(max-width:700px){.change-password-form{grid-template-columns:1fr 1fr}.admin-user-form{grid-template-columns:1fr}}@media(max-width:480px){.login-create-fields{grid-template-columns:1fr}.login-create-actions .btn{width:100%}.change-password-form{grid-template-columns:1fr}.change-password-actions{grid-column:auto}.admin-user-form h4,.admin-user-form fieldset,.admin-user-actions{grid-column:auto}}
   </style>
 </head>
 <body>
@@ -39,6 +42,7 @@
       <span id="status-sincronizacao" class="muted" role="status"></span>
       <button id="recarregar-remoto" class="btn small" type="button" hidden>Carregar versão do servidor</button>
       <button id="trocar-empresa" class="btn small" type="button" hidden>Alterar conta</button>
+      <button id="abrir-alterar-senha" class="btn small" type="button" hidden>Alterar senha</button>
       <button id="sair" class="btn small" type="button">Sair da conta</button>
     </div>
     <nav class="tabs" aria-label="Seções" hidden>
@@ -70,6 +74,17 @@
       <p id="company-status" class="muted" role="status"></p>
     </section>
     <div id="app-shell" hidden>
+      <section id="alterar-senha-card" class="card change-password-card" hidden>
+        <h2>Alterar minha senha</h2>
+        <p class="muted">Informe sua senha atual e escolha uma nova senha com pelo menos 8 caracteres.</p>
+        <form id="form-alterar-senha" class="change-password-form">
+          <div class="field"><label for="senha-atual">Senha atual</label><input id="senha-atual" type="password" autocomplete="current-password" required></div>
+          <div class="field"><label for="senha-nova">Nova senha</label><input id="senha-nova" type="password" autocomplete="new-password" minlength="8" required></div>
+          <div class="field"><label for="senha-nova-confirmacao">Confirme a nova senha</label><input id="senha-nova-confirmacao" type="password" autocomplete="new-password" minlength="8" required></div>
+          <div class="change-password-actions"><button class="btn primary" type="submit">Salvar nova senha</button><button id="cancelar-alterar-senha" class="btn" type="button">Cancelar</button></div>
+        </form>
+        <p id="alterar-senha-status" class="muted" role="status"></p>
+      </section>
       <section class="module-panel" id="panel-pdv"></section>
       <section class="module-panel" id="panel-comanda"></section>
       <section class="module-panel" id="panel-caixa"></section>
@@ -103,12 +118,14 @@
         </div>
         <div id="admin-access-card" class="card" hidden>
           <h3>Logins e acessos</h3>
-          <p>Crie um login, defina uma senha inicial e libere uma ou mais empresas. Depois, gerencie as empresas permitidas, redefina senhas e oculte abas por login.</p>
-          <form id="form-criar-login" class="grid">
-            <div class="field"><label for="novo-login">Novo login</label><input id="novo-login" type="text" autocomplete="off" minlength="3" maxlength="32" pattern="[A-Za-z0-9._\-]+" title="Use de 3 a 32 letras, números, ponto, traço ou sublinhado." required></div>
-            <div class="field"><label for="nova-senha-usuario">Senha inicial (mínimo 8 caracteres)</label><input id="nova-senha-usuario" type="password" autocomplete="new-password" minlength="8" required></div>
-            <div class="field"><span class="label">Empresas liberadas</span><div id="convite-empresas" class="check-list"></div></div>
-            <button id="criar-login" class="btn primary" type="submit">Criar login e liberar acesso</button>
+          <p>Crie logins, defina as empresas liberadas e gerencie permissões. Os usuários também podem alterar a própria senha pelo botão no cabeçalho.</p>
+          <form id="form-criar-login" class="login-create">
+            <div class="login-create-fields">
+              <div class="field"><label for="novo-login">Novo login</label><input id="novo-login" type="text" autocomplete="off" minlength="3" maxlength="32" pattern="[A-Za-z0-9._\-]+" title="Use de 3 a 32 letras, números, ponto, traço ou sublinhado." required></div>
+              <div class="field"><label for="nova-senha-usuario">Senha inicial (mínimo 8 caracteres)</label><input id="nova-senha-usuario" type="password" autocomplete="new-password" minlength="8" required></div>
+            </div>
+            <fieldset class="login-create-companies"><legend>Empresas liberadas</legend><div id="convite-empresas" class="check-list"></div></fieldset>
+            <div class="login-create-actions"><button id="criar-login" class="btn primary" type="submit">Criar login e liberar acesso</button></div>
           </form>
           <p id="criar-login-status" class="muted" role="status"></p>
           <h3>Logins cadastrados</h3>
@@ -251,12 +268,14 @@ function salvar(){
 }
 function mostrarLogin(texto=""){
   $("#login-screen").hidden=false;$("#company-screen").hidden=true;$("#app-shell").hidden=true;$(".tabs").hidden=true;$("#sessao-controles").hidden=true;
+  $("#abrir-alterar-senha").hidden=true;$("#alterar-senha-card").hidden=true;
   $("#empresa-nome-cabecalho").textContent="Acesso ao sistema";
   $("#form-login").hidden=false;
   $("#login-status").textContent=texto;
 }
 function mostrarSeletorEmpresas(texto=""){
   $("#login-screen").hidden=true;$("#app-shell").hidden=true;$("#company-screen").hidden=false;$(".tabs").hidden=true;$("#sessao-controles").hidden=true;
+  $("#abrir-alterar-senha").hidden=true;$("#alterar-senha-card").hidden=true;
   $("#empresa-nome-cabecalho").textContent="Selecione uma empresa";
   $("#company-status").textContent=texto;
   $("#company-list").innerHTML=empresasDisponiveis.map(empresa=>`<button class="btn company-choice" type="button" data-company-id="${escapeHtml(empresa.id)}">${escapeHtml(empresa.name)}</button>`).join("")||'<p class="notice warning">Sua conta ainda não tem empresas liberadas. Peça ao administrador para conceder acesso.</p>';
@@ -265,6 +284,8 @@ function mostrarAplicativo(){
   $("#login-screen").hidden=true;$("#company-screen").hidden=true;$("#app-shell").hidden=false;$(".tabs").hidden=false;$("#sessao-controles").hidden=false;
   $("#status-sincronizacao").textContent=modoLocal?"Modo local: dados só neste navegador.":`Conectado${sessaoSupabase?.username?` como ${sessaoSupabase.username}`:""}`;
   $("#sair").hidden=modoLocal;
+  $("#abrir-alterar-senha").hidden=modoLocal;
+  $("#alterar-senha-card").hidden=true;
   $("#empresa-nome-cabecalho").textContent=empresaSelecionada?.name||(modoLocal?"Dados locais":"Empresa");
   $("#trocar-empresa").hidden=modoLocal;
   $("#admin-access-card").hidden=!ehAdmin;
@@ -420,7 +441,7 @@ async function carregarLoginsAdministrativos(){
         <div class="field"><label>Nova senha (opcional; mínimo 8 caracteres)</label><input type="password" data-user-password autocomplete="new-password" minlength="8" placeholder="Deixe em branco para manter"></div>
         <fieldset><legend>Empresas liberadas</legend><div class="check-list">${empresasDisponiveis.map(empresa=>`<label class="check-option"><input type="checkbox" data-user-company value="${escapeHtml(empresa.id)}" ${empresasUsuario.has(empresa.id)?"checked":""}> ${escapeHtml(empresa.name)}</label>`).join("")}</div></fieldset>
         <fieldset><legend>Abas ocultas para este login</legend><div class="check-list">${ABAS.map(([id,nome])=>`<label class="check-option"><input type="checkbox" data-user-tab value="${id}" ${abasUsuario.has(id)?"checked":""}> ${escapeHtml(nome.replace(/^[\d.]+\s+/,""))}</label>`).join("")}</div></fieldset>
-        <button class="btn primary" type="submit">Salvar alterações</button>
+        <div class="admin-user-actions"><button class="btn primary" type="submit">Salvar alterações</button><button class="btn danger" type="button" data-action="pedir-exclusao-login">Excluir login</button><button class="btn danger" type="button" data-action="confirmar-exclusao-login" hidden>Confirmar exclusão</button><button class="btn" type="button" data-action="cancelar-exclusao-login" hidden>Cancelar</button></div>
       </form></article>`;
     }).join(""):'<p class="muted">Nenhum login de usuário cadastrado.</p>';
     status.textContent=`${loginsAdministrativos.length} login(s) cadastrado(s).`;
@@ -980,6 +1001,32 @@ $("#form-criar-login").addEventListener("submit",async e=>{
   }catch(erro){console.error("Falha ao criar login:",erro);status.textContent=`Não foi possível criar o login: ${erro.message}`}
   finally{botao.disabled=false}
 },{capture:true});
+$("#abrir-alterar-senha").addEventListener("click",()=>{
+  const card=$("#alterar-senha-card");
+  card.hidden=!card.hidden;
+  if(!card.hidden)$("#senha-atual").focus();
+});
+$("#cancelar-alterar-senha").addEventListener("click",()=>{
+  $("#form-alterar-senha").reset();
+  $("#alterar-senha-status").textContent="";
+  $("#alterar-senha-card").hidden=true;
+});
+$("#form-alterar-senha").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const form=e.currentTarget,status=$("#alterar-senha-status"),botao=$("button[type=submit]",form);
+  const senhaAtual=$("#senha-atual").value,senhaNova=$("#senha-nova").value;
+  if(senhaNova!==$("#senha-nova-confirmacao").value){status.textContent="A confirmação não corresponde à nova senha.";return}
+  if(senhaNova.length<8){status.textContent="A nova senha deve ter pelo menos 8 caracteres.";return}
+  botao.disabled=true;status.textContent="Alterando senha…";
+  try{
+    const resultado=await chamadaRpc("app_change_own_password",{
+      p_token:await tokenValido(),p_current_password:senhaAtual,p_new_password:senhaNova
+    });
+    form.reset();
+    status.textContent=resultado?.message||"Senha alterada com sucesso.";
+  }catch(erro){console.error("Falha ao alterar a própria senha:",erro);status.textContent=`Não foi possível alterar a senha: ${erro.message}`}
+  finally{botao.disabled=false}
+});
 $("#admin-user-list").addEventListener("submit",async e=>{
   const form=e.target.closest(".admin-user-form");if(!form)return;
   e.preventDefault();
@@ -1001,6 +1048,39 @@ $("#admin-user-list").addEventListener("submit",async e=>{
     status.textContent=resultado?.message||"Acesso atualizado.";
   }catch(erro){console.error("Falha ao atualizar acesso do login:",erro);status.textContent=`Não foi possível salvar as alterações: ${erro.message}`}
   finally{botao.disabled=false}
+});
+$("#admin-user-list").addEventListener("click",async e=>{
+  const botao=e.target.closest("[data-action]");if(!botao)return;
+  const artigo=botao.closest(".admin-user"),form=botao.closest(".admin-user-form");
+  if(!artigo||!form)return;
+  const acao=botao.dataset.action;
+  if(acao==="pedir-exclusao-login"){
+    botao.hidden=true;
+    $('[data-action="confirmar-exclusao-login"]',artigo).hidden=false;
+    $('[data-action="cancelar-exclusao-login"]',artigo).hidden=false;
+    return;
+  }
+  if(acao==="cancelar-exclusao-login"){
+    $('[data-action="confirmar-exclusao-login"]',artigo).hidden=true;
+    $('[data-action="cancelar-exclusao-login"]',artigo).hidden=true;
+    $('[data-action="pedir-exclusao-login"]',artigo).hidden=false;
+    return;
+  }
+  if(acao!=="confirmar-exclusao-login")return;
+  const username=$("h4",form).textContent.replace(/^Login:\s*/,"");
+  botao.disabled=true;
+  $('[data-action="cancelar-exclusao-login"]',artigo).disabled=true;
+  $("#admin-users-status").textContent=`Excluindo o login ${username}…`;
+  try{
+    const resultado=await chamadaRpc("app_admin_delete_user",{p_token:await tokenValido(),p_user_id:form.dataset.userId});
+    await carregarLoginsAdministrativos();
+    $("#admin-users-status").textContent=resultado?.message||`Login ${username} excluído.`;
+  }catch(erro){
+    console.error("Falha ao excluir login:",erro);
+    $("#admin-users-status").textContent=`Não foi possível excluir o login: ${erro.message}`;
+    botao.disabled=false;
+    $('[data-action="cancelar-exclusao-login"]',artigo).disabled=false;
+  }
 });
 $("#sair").addEventListener("click",async e=>{
   e.preventDefault();e.stopImmediatePropagation();
