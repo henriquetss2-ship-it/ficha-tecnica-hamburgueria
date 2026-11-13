@@ -15,7 +15,11 @@
     header{position:relative;padding-right:max(18px,calc((100vw - 1200px)/2))}.brand-heading{padding-right:330px}.brand-heading h1{overflow-wrap:anywhere}.sessao-controles{position:absolute;top:18px;right:max(18px,calc((100vw - 1200px)/2));max-width:48%;justify-content:flex-end;margin:0}.sessao-controles #status-sincronizacao{flex-basis:100%;text-align:right;font-size:.78rem}.sessao-controles #recarregar-remoto{order:3}@media(max-width:760px){header{padding-right:14px}.brand-heading{padding-right:0}.sessao-controles{position:static;max-width:none;justify-content:flex-start;margin:12px 0}.sessao-controles #status-sincronizacao{flex-basis:100%;text-align:left}}
   </style>
   <style>
-    .receipt-preview{max-width:420px;min-height:180px;margin:12px auto;padding:18px;background:#fff;color:#111;border:1px dashed #888;font:13px/1.35 "Courier New",monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+    .receipt-preview-wrap{max-width:420px;min-height:180px;margin:12px auto;padding:18px;background:#fff;color:#111;border:1px dashed #888}
+    .receipt-preview{margin:0;font:13px/1.35 "Courier New",monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+    .receipt-logo-preview{display:block;max-height:120px;object-fit:contain;margin:0 auto 12px}
+    .logo-controls{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:12px 0}
+    .logo-controls .field{flex:1;min-width:180px}
     .printer-status{min-height:1.5em}
     .config-panel{margin-top:8px}
   </style>
@@ -154,10 +158,18 @@
             <div class="grid">
               <label class="field"><span>Largura do papel</span><select data-print-width><option value="32">58 mm (32 colunas)</option><option value="42">80 mm (42 colunas)</option></select></label>
             </div>
+            <h4>Logo da empresa</h4>
+            <p class="footer-note">Envie uma imagem para aparecer centralizada no topo do comprovante. Formatos aceitos: PNG, JPG ou WebP.</p>
+            <div class="logo-controls">
+              <label class="btn">Escolher imagem<input type="file" accept="image/png,image/jpeg,image/webp" data-print-logo-file hidden></label>
+              <button class="btn danger" type="button" data-action="impressora-logo-remover">Remover logo</button>
+              <label class="field"><span>Tamanho da logo: <strong data-print-logo-width-label>80%</strong></span><input type="range" min="20" max="100" step="5" value="80" data-print-logo-width></label>
+            </div>
+            <p class="footer-note" data-print-logo-status role="status"></p>
             <label class="field"><span>Modelo de impressão</span><textarea data-print-layout rows="14" maxlength="8000" spellcheck="false" aria-label="Modelo de impressão"></textarea></label>
             <p class="footer-note">Campos disponíveis: {{empresa}}, {{numero}}, {{data}}, {{comanda}}, {{itens}}, {{subtotal}}, {{desconto}}, {{total}}, {{pagamento}}.</p>
             <h4>Prévia</h4>
-            <pre class="receipt-preview" data-print-preview></pre>
+            <div class="receipt-preview-wrap"><img class="receipt-logo-preview" data-print-logo-preview alt="Prévia da logo da empresa" hidden><pre class="receipt-preview" data-print-preview></pre></div>
             <button class="btn primary" type="button" data-action="impressora-teste">Imprimir teste</button>
           </div>
         </section>
@@ -226,7 +238,7 @@ const exemplo = {
   insumos:[],fichas:[],custos:[],faturamento:0,imposto:0,taxas:0,margemPadrao:0,
   chaveApi:"",categorias:[...CATEGORIAS_PADRAO],categoriaCombo:"Combo",categoriaFiltro:"Todas",
   pedidoPdv:[],vendasPdv:[],comandas:[],caixas:[],producaoConfig:{},ordensProducao:[],pedidosCompra:[],movimentosEstoque:[],
-  configImpressao:{largura:32,layout:LAYOUT_COMPROVANTE_PADRAO},
+  configImpressao:{largura:32,layout:LAYOUT_COMPROVANTE_PADRAO,logo:"",logoLargura:80},
   ultimaAnalise:"",versaoImportacao:VERSAO_IMPORTACAO
 };
 let dados = carregarDados();
@@ -276,9 +288,12 @@ function normalizarDesconto(d){
   return {tipo,valor:valor>0?valor:""};
 }
 function normalizarConfigImpressao(config){
+  const logo=typeof config?.logo==="string"&&/^data:image\/(?:png|jpeg|webp);base64,/i.test(config.logo)&&config.logo.length<=1400000?config.logo:"";
   return {
     largura:Number(config?.largura)===42?42:32,
-    layout:String(config?.layout||LAYOUT_COMPROVANTE_PADRAO).slice(0,8000)
+    layout:String(config?.layout||LAYOUT_COMPROVANTE_PADRAO).slice(0,8000),
+    logo,
+    logoLargura:Math.max(20,Math.min(100,Number(config?.logoLargura)||80))
   };
 }
 function calcDesconto(subtotal,d){
@@ -1110,13 +1125,69 @@ function textoComprovante(venda){
 }
 function renderPreviaComprovante(){
  const editor=$("[data-print-layout]"),largura=$("[data-print-width]"),previa=$("[data-print-preview]");
+ const logo=$("[data-print-logo-preview]"),logoWidth=$("[data-print-logo-width]"),logoLabel=$("[data-print-logo-width-label]");
  if(editor&&editor.value!==dados.configImpressao.layout)editor.value=dados.configImpressao.layout;
  if(largura)largura.value=String(dados.configImpressao.largura);
+ if(logoWidth){logoWidth.value=String(dados.configImpressao.logoLargura);logoWidth.disabled=!dados.configImpressao.logo}
+ if(logoLabel)logoLabel.textContent=`${dados.configImpressao.logoLargura}%`;
+ if(logo){
+  logo.hidden=!dados.configImpressao.logo;
+  if(dados.configImpressao.logo&&logo.src!==dados.configImpressao.logo)logo.src=dados.configImpressao.logo;
+  if(!dados.configImpressao.logo)logo.removeAttribute("src");
+  logo.style.width=`${dados.configImpressao.logoLargura}%`;
+ }
+ const removeLogo=$('[data-action="impressora-logo-remover"]');
+ if(removeLogo)removeLogo.disabled=!dados.configImpressao.logo;
+ const logoStatus=$("[data-print-logo-status]");
+ if(logoStatus)logoStatus.textContent=dados.configImpressao.logo?"Logo salva; será impressa centralizada no topo do comprovante.":"Nenhuma logo adicionada.";
  if(previa){
   const exemploVenda={numero:"000123",dataHora:new Date().toISOString(),empresa:empresaSelecionada?.name||"Sua empresa",formaPagamento:"Pix",subtotal:27.5,desconto:2.5,total:25,comanda:"Mesa 4",itens:[{nome:"X-Burger",quantidade:2,precoUnitario:12.5,obs:"sem cebola"}]};
   previa.textContent=textoComprovante(exemploVenda);
-  previa.style.width=dados.configImpressao.largura===42?"100%":"min(100%, 340px)";
+  const wrapper=previa.parentElement;
+  if(wrapper)wrapper.style.width=dados.configImpressao.largura===42?"100%":"min(100%, 340px)";
  }
+}
+async function prepararLogoComprovante(arquivo){
+ if(!arquivo||!["image/png","image/jpeg","image/webp"].includes(arquivo.type))throw new Error("Escolha uma imagem PNG, JPG ou WebP.");
+ if(arquivo.size>10*1024*1024)throw new Error("A imagem deve ter no máximo 10 MB.");
+ const imagem=await createImageBitmap(arquivo);
+ try{
+  const escala=Math.min(1,576/imagem.width,400/imagem.height);
+  const canvas=document.createElement("canvas");
+  canvas.width=Math.max(1,Math.round(imagem.width*escala));canvas.height=Math.max(1,Math.round(imagem.height*escala));
+  const contexto=canvas.getContext("2d");
+  if(!contexto)throw new Error("Não foi possível preparar a imagem neste navegador.");
+  contexto.fillStyle="#fff";contexto.fillRect(0,0,canvas.width,canvas.height);contexto.drawImage(imagem,0,0,canvas.width,canvas.height);
+  const logo=canvas.toDataURL("image/jpeg",.78);
+  if(logo.length>1400000)throw new Error("A imagem otimizada ficou grande demais. Escolha um arquivo menor ou com menos detalhes.");
+  return logo;
+ }finally{imagem.close()}
+}
+async function bytesLogoEscPos(){
+ const logo=dados.configImpressao.logo;
+ if(!logo)return new Uint8Array();
+ const resposta=await fetch(logo);
+ if(!resposta.ok)throw new Error("Não foi possível ler a logo salva.");
+ const imagem=await createImageBitmap(await resposta.blob());
+ try{
+  const dots=(dados.configImpressao.largura===42?576:384)*dados.configImpressao.logoLargura/100;
+  const largura=Math.max(1,Math.floor(dots)),altura=Math.max(1,Math.round(imagem.height*largura/imagem.width));
+  const canvas=document.createElement("canvas");canvas.width=largura;canvas.height=altura;
+  const contexto=canvas.getContext("2d",{willReadFrequently:true});
+  if(!contexto)throw new Error("Não foi possível converter a logo para impressão.");
+  contexto.fillStyle="#fff";contexto.fillRect(0,0,largura,altura);contexto.drawImage(imagem,0,0,largura,altura);
+  const pixels=contexto.getImageData(0,0,largura,altura).data,bytesLargura=Math.ceil(largura/8);
+  const raster=new Uint8Array(bytesLargura*altura);
+  for(let y=0;y<altura;y++)for(let x=0;x<largura;x++){
+   const offset=(y*largura+x)*4,luminancia=.299*pixels[offset]+.587*pixels[offset+1]+.114*pixels[offset+2];
+   if(luminancia<170)raster[y*bytesLargura+Math.floor(x/8)]|=0x80>>(x%8);
+  }
+  const comando=new Uint8Array(15+raster.length);
+  comando.set([0x1b,0x61,0x01,0x1d,0x76,0x30,0x00,bytesLargura&0xff,(bytesLargura>>8)&0xff,altura&0xff,(altura>>8)&0xff]);
+  comando.set(raster,11);
+  comando.set([0x1b,0x61,0x00,0x0a],11+raster.length);
+  return comando;
+ }finally{imagem.close()}
 }
 async function desconectarImpressoras(){
  if(impressoraBluetooth?.device.gatt?.connected)impressoraBluetooth.device.gatt.disconnect();
@@ -1182,7 +1253,7 @@ async function conectarImpressoraUsb(){
  impressoraUsb={device,interfaceNumber:saida.interfaceNumber,alternateSetting:saida.alternateSetting,endpointNumber:saida.endpoint.number};
  atualizarStatusImpressora(`USB conectado: ${device.productName||"impressora"}.`);
 }
-function bytesEscPos(texto){
+async function bytesEscPos(texto){
  const colunas=dados.configImpressao.largura;
  const linhas=String(texto).split(/\r?\n/).flatMap(linha=>{
   if(!linha)return [""];
@@ -1202,12 +1273,13 @@ function bytesEscPos(texto){
  }).join("\n");
  const textoBasico=linhas.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\x00-\x7f]/g,"?");
  const conteudo=new TextEncoder().encode(textoBasico+"\n\n\n");
- const bytes=new Uint8Array(2+conteudo.length+3);
- bytes.set([0x1b,0x40],0);bytes.set(conteudo,2);bytes.set([0x1d,0x56,0x00],2+conteudo.length);
+ const logo=await bytesLogoEscPos();
+ const bytes=new Uint8Array(2+logo.length+conteudo.length+3);
+ bytes.set([0x1b,0x40],0);bytes.set(logo,2);bytes.set(conteudo,2+logo.length);bytes.set([0x1d,0x56,0x00],2+logo.length+conteudo.length);
  return bytes;
 }
 async function enviarParaImpressora(texto){
- const bytes=bytesEscPos(texto);
+ const bytes=await bytesEscPos(texto);
  if(impressoraBluetooth){
   const {characteristic}=impressoraBluetooth;
   for(let i=0;i<bytes.length;i+=160){
@@ -1237,7 +1309,8 @@ function imprimirPeloSistema(texto){
  const janela=window.open("","_blank","width=420,height=700");
  if(!janela)throw new Error("O navegador bloqueou a janela de impressão. Permita pop-ups para este aplicativo e tente novamente.");
  const largura=dados.configImpressao.largura===42?"80mm":"58mm";
- janela.document.write(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Comprovante</title><style>@page{size:auto;margin:2mm}html,body{margin:0;padding:0;color:#000;background:#fff}pre{width:${largura};margin:0 auto;padding:2mm;box-sizing:border-box;font:10pt/1.3 "Courier New",monospace;white-space:pre-wrap;overflow-wrap:anywhere}</style><pre>${escaparHtml(texto)}</pre></html>`);
+ const logo=dados.configImpressao.logo?`<img class="logo" src="${dados.configImpressao.logo}" alt="">`:"";
+ janela.document.write(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Comprovante</title><style>@page{size:auto;margin:2mm}html,body{margin:0;padding:0;color:#000;background:#fff}.receipt{width:${largura};margin:0 auto;padding:2mm;box-sizing:border-box}.logo{display:block;width:${dados.configImpressao.logoLargura}%;max-height:35mm;object-fit:contain;margin:0 auto 3mm}pre{margin:0;font:10pt/1.3 "Courier New",monospace;white-space:pre-wrap;overflow-wrap:anywhere}</style><main class="receipt">${logo}<pre>${escaparHtml(texto)}</pre></main></html>`);
  janela.document.close();janela.focus();janela.onafterprint=()=>janela.close();setTimeout(()=>janela.print(),250);
 }
 async function imprimirComprovante(venda){
@@ -1434,6 +1507,20 @@ function gravarCampo(target,value){
 }
 document.addEventListener("change",e=>{
  const t=e.target;
+ if(t.matches("[data-print-logo-file]")){
+  const arquivo=t.files?.[0];
+  if(!arquivo)return;
+  prepararLogoComprovante(arquivo).then(logo=>{
+   dados.configImpressao.logo=logo;salvar();renderPreviaComprovante();
+  }).catch(erro=>{
+   const status=$("[data-print-logo-status]");
+   if(status)status.textContent=`Não foi possível carregar a logo: ${erro.message}`;
+  }).finally(()=>{t.value=""});
+  return;
+ }
+ if(t.matches("[data-print-logo-width]")){
+  dados.configImpressao.logoLargura=Math.max(20,Math.min(100,Number(t.value)||80));salvar();renderPreviaComprovante();return;
+ }
  if(t.matches("[data-print-width]")){
   dados.configImpressao.largura=Number(t.value)===42?42:32;salvar();renderPreviaComprovante();return;
  }
@@ -1448,6 +1535,9 @@ document.addEventListener("keydown",e=>{
 });
 document.addEventListener("input",e=>{
  const t=e.target;
+ if(t.matches("[data-print-logo-width]")){
+  dados.configImpressao.logoLargura=Math.max(20,Math.min(100,Number(t.value)||80));renderPreviaComprovante();return;
+ }
  if(t.matches("[data-print-layout]")){
   dados.configImpressao.layout=t.value.slice(0,8000);salvar();renderPreviaComprovante();return;
  }
@@ -1768,6 +1858,9 @@ document.addEventListener("click",e=>{
  if(act==="impressora-teste"){
   const venda={numero:"000123",dataHora:new Date().toISOString(),empresa:empresaSelecionada?.name||"Sua empresa",formaPagamento:"Pix",subtotal:27.5,desconto:2.5,total:25,comanda:"Mesa 4",itens:[{nome:"X-Burger",quantidade:2,precoUnitario:12.5,obs:"sem cebola"}]};
   imprimirComprovante(venda).catch(erro=>atualizarStatusImpressora(`Falha na impressão: ${erro.message}`));return;
+ }
+ if(act==="impressora-logo-remover"){
+  dados.configImpressao.logo="";salvar();renderPreviaComprovante();return;
  }
  if(act==="imprimir-venda"){
   imprimirVenda(b.dataset.id).catch(erro=>atualizarStatusImpressora(`Falha na impressão: ${erro.message}`));return;
