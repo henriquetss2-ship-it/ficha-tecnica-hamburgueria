@@ -142,15 +142,33 @@
         <section class="panel active config-panel" id="panel-config-impressora">
           <div class="card">
             <h3>Conectar impressora térmica</h3>
-            <p>Conecte um dispositivo compatível ou use a impressão do navegador para selecionar qualquer impressora instalada no Windows/macOS, inclusive impressoras Bluetooth pareadas pelo sistema.</p>
+            <p>Cadastre as impressoras de cada setor. As conexões diretas ficam ativas enquanto esta página estiver aberta; após recarregar, conecte novamente.</p>
             <div class="actions">
-              <button class="btn" type="button" data-action="impressora-conectar-bluetooth">Conectar via Bluetooth</button>
-              <button class="btn" type="button" data-action="impressora-conectar-usb">Conectar via USB</button>
-              <button class="btn" type="button" data-action="impressora-desconectar">Desconectar</button>
+              <button class="btn" type="button" data-action="impressora-adicionar-bluetooth">Adicionar impressora Bluetooth</button>
+              <button class="btn" type="button" data-action="impressora-adicionar-usb">Adicionar impressora USB</button>
             </div>
             <p id="impressora-status" class="printer-status muted" role="status">Nenhuma impressora conectada diretamente. A impressão pelo navegador continua disponível.</p>
             <p class="footer-note">Bluetooth direto funciona apenas com impressoras Bluetooth LE que exponham um serviço gravável compatível; modelos Bluetooth clássico/serial devem ser pareados no sistema. USB direto requer WebUSB e pode não funcionar quando o driver já controla a impressora. Os recursos variam por navegador (normalmente Chrome/Edge; HTTPS pode ser exigido). Em arquivo aberto por duplo clique, use “Imprimir teste” para abrir a impressão do sistema.</p>
+            <div id="printer-devices"></div>
+            <h4>Impressão por setor</h4>
+            <p class="footer-note">No modo automático, conecte a impressora diretamente nesta sessão. No manual, os botões de impressão abrem a impressora selecionada pelo sistema se não houver conexão direta.</p>
+            <div id="printer-routes"></div>
             <button class="btn primary" type="button" data-action="impressora-teste">Imprimir teste</button>
+          </div>
+          <div class="card">
+            <h3>Layout da comanda para pagamento</h3>
+            <p>A comanda pode ter uma logo diferente do comprovante de venda. A imagem fica centralizada no topo.</p>
+            <div class="logo-controls">
+              <label class="btn">Enviar logo da comanda<input type="file" accept="image/png,image/jpeg,image/webp" data-comanda-logo-file hidden></label>
+              <button class="btn danger" type="button" data-action="comanda-logo-remover">Remover logo da comanda</button>
+              <label class="field"><span>Tamanho da logo: <strong data-comanda-logo-width-label>80%</strong></span><input type="range" min="20" max="100" step="5" value="80" data-comanda-logo-width></label>
+            </div>
+            <p class="footer-note" data-comanda-logo-status role="status"></p>
+            <label class="field"><span>Modelo da comanda</span><textarea data-comanda-layout rows="10" maxlength="8000" spellcheck="false" aria-label="Modelo da comanda"></textarea></label>
+            <p class="footer-note">Campos: {{empresa}}, {{comanda}}, {{data}}, {{itens}}, {{subtotal}}, {{desconto}}, {{total}}, {{pagamento}}.</p>
+            <h4>Prévia da comanda</h4>
+            <div class="receipt-preview-wrap"><img class="receipt-logo-preview" data-comanda-logo-preview alt="Prévia da logo da comanda" hidden><pre class="receipt-preview" data-comanda-preview></pre></div>
+            <button class="btn" type="button" data-action="comanda-imprimir-teste">Imprimir comanda de teste</button>
           </div>
           <div class="card">
             <h3>Layout do comprovante</h3>
@@ -233,12 +251,15 @@ const ABAS_PRODUCAO = ["painel", "ordens", "estoque", "compras", "parametros"];
 const UNIDADES = ["g", "kg", "ml", "L", "un"];
 const VERSAO_IMPORTACAO = "hamburgueria-2026-11-v2";
 const LAYOUT_COMPROVANTE_PADRAO = "{{empresa}}\nCOMPROVANTE DE VENDA\nVenda #{{numero}}\n{{data}}\n{{comanda}}\n--------------------------------\n{{itens}}\n--------------------------------\nSubtotal: {{subtotal}}\nDesconto: {{desconto}}\nTOTAL: {{total}}\nPagamento: {{pagamento}}\nObrigado pela preferência!\n";
+const LAYOUT_COMANDA_PADRAO = "{{empresa}}\nCOMANDA {{comanda}}\n{{data}}\n--------------------------------\n{{itens}}\n--------------------------------\nSubtotal: {{subtotal}}\nDesconto: {{desconto}}\nTOTAL: {{total}}\n";
+const SETORES_IMPRESSAO = [["lanches","Lanches / Cozinha"],["bebidas","Bebidas"],["outros","Outros"]];
+const ROTAS_IMPRESSAO = [...SETORES_IMPRESSAO,["comanda","Comanda para pagamento"],["comprovante","Comprovante de venda"]];
 const uid = () => Math.random().toString(36).slice(2, 10);
 const exemplo = {
   insumos:[],fichas:[],custos:[],faturamento:0,imposto:0,taxas:0,margemPadrao:0,
   chaveApi:"",categorias:[...CATEGORIAS_PADRAO],categoriaCombo:"Combo",categoriaFiltro:"Todas",
   pedidoPdv:[],vendasPdv:[],comandas:[],caixas:[],producaoConfig:{},ordensProducao:[],pedidosCompra:[],movimentosEstoque:[],
-  configImpressao:{largura:32,layout:LAYOUT_COMPROVANTE_PADRAO,logo:"",logoLargura:80},
+  configImpressao:{largura:32,layout:LAYOUT_COMPROVANTE_PADRAO,logo:"",logoLargura:80,layoutComanda:LAYOUT_COMANDA_PADRAO,logoComanda:"",logoComandaLargura:80,impressoras:[],roteamentoImpressao:{}},
   ultimaAnalise:"",versaoImportacao:VERSAO_IMPORTACAO
 };
 let dados = carregarDados();
@@ -247,8 +268,7 @@ let subAbaAtiva = "insumos";
 let subAbaPdvAtiva = "pdv";
 let subAbaProducaoAtiva = "painel";
 let subAbaConfiguracaoAtiva = "impressora";
-let impressoraUsb = null;
-let impressoraBluetooth = null;
+const conexoesImpressora = new Map();
 let statusImpressora = "";
 let categoriasRascunho = null;
 let erroCategorias = "";
@@ -288,12 +308,22 @@ function normalizarDesconto(d){
   return {tipo,valor:valor>0?valor:""};
 }
 function normalizarConfigImpressao(config){
-  const logo=typeof config?.logo==="string"&&/^data:image\/(?:png|jpeg|webp);base64,/i.test(config.logo)&&config.logo.length<=1400000?config.logo:"";
+  const normalizarLogo=logo=>typeof logo==="string"&&/^data:image\/(?:png|jpeg|webp);base64,/i.test(logo)&&logo.length<=1400000?logo:"";
+  const impressoras=Array.isArray(config?.impressoras)?config.impressoras.filter(p=>p&&typeof p.id==="string"&&typeof p.nome==="string"&&["usb","bluetooth"].includes(p.tipo)).map(p=>({id:p.id.slice(0,160),nome:p.nome.slice(0,100),tipo:p.tipo})).slice(0,20):[];
+  const rotas={};
+  for(const [id] of ROTAS_IMPRESSAO){
+    const rota=config?.roteamentoImpressao?.[id]||{};
+    rotas[id]={impressoraId:impressoras.some(p=>p.id===rota.impressoraId)?rota.impressoraId:"",modo:rota.modo==="automatico"?"automatico":"manual"};
+  }
   return {
     largura:Number(config?.largura)===42?42:32,
     layout:String(config?.layout||LAYOUT_COMPROVANTE_PADRAO).slice(0,8000),
-    logo,
-    logoLargura:Math.max(20,Math.min(100,Number(config?.logoLargura)||80))
+    logo:normalizarLogo(config?.logo),
+    logoLargura:Math.max(20,Math.min(100,Number(config?.logoLargura)||80)),
+    layoutComanda:String(config?.layoutComanda||LAYOUT_COMANDA_PADRAO).slice(0,8000),
+    logoComanda:normalizarLogo(config?.logoComanda),
+    logoComandaLargura:Math.max(20,Math.min(100,Number(config?.logoComandaLargura)||80)),
+    impressoras,roteamentoImpressao:rotas
   };
 }
 function calcDesconto(subtotal,d){
@@ -346,6 +376,7 @@ function normalizarDados(obj){
     f.estoqueAtual=Math.max(0,n(f.estoqueAtual));
     f.estoqueMinimo=Math.max(0,n(f.estoqueMinimo));
     f.estoqueAlvo=Math.max(f.estoqueMinimo,n(f.estoqueAlvo));
+    f.setorImpressao=SETORES_IMPRESSAO.some(([setor])=>setor===f.setorImpressao)?f.setorImpressao:/bebida/i.test(String(f.categoria||""))?"bebidas":"lanches";
   });
   const fichasPorId=new Map(normalizado.fichas.map(f=>[f.id,f]));
   normalizado.pedidoPdv=normalizado.pedidoPdv.filter(item=>fichasPorId.has(item.fichaId)&&fichasPorId.get(item.fichaId).tipoProduto!=="semiacabado"&&n(item.quantidade)>0).map(item=>({
@@ -839,8 +870,10 @@ function renderComanda(){
    const linha=escapeHtml(item.linhaId),chave=`item:${item.linhaId}`;
    return `<div class="pos-cart-line"><div><div class="pos-line-name">${escapeHtml(item.nome)}</div><div class="muted">${moeda(n(item.precoUnitario))} cada</div><div class="pos-line-controls"><button class="btn small" data-action="comanda-diminuir" data-comanda="${id}" data-linha="${linha}" aria-label="Diminuir quantidade">−</button><span>${n(item.quantidade)}</span><button class="btn small" data-action="comanda-aumentar" data-comanda="${id}" data-linha="${linha}" aria-label="Aumentar quantidade">+</button>${confirmacaoComanda===chave?`<button class="btn small danger" data-action="comanda-confirmar-item" data-comanda="${id}" data-linha="${linha}">Confirmar</button><button class="btn small" data-action="comanda-cancelar-confirmacao">Cancelar</button>`:`<button class="btn small danger" data-action="comanda-remover-item" data-comanda="${id}" data-linha="${linha}">Remover</button>`}</div><input class="line-obs" type="text" maxlength="120" data-comanda-obs data-comanda="${id}" data-linha="${linha}" placeholder="Observação (ex.: sem cebola)" value="${escapeHtml(item.obs||"")}" aria-label="Observação do item"></div><div class="pos-line-total">${moeda(n(item.precoUnitario)*n(item.quantidade))}</div></div>`;
   }).join("");
+  const setores=[...itensPorSetor(c.itens).keys()];
+  const botoesImpressao=`<div class="actions"><button class="btn small" type="button" data-action="imprimir-comanda-aberta" data-comanda="${id}" ${c.itens.length?"":"disabled"}>Imprimir comanda</button>${setores.map(setor=>`<button class="btn small" type="button" data-action="imprimir-setor-comanda" data-comanda="${id}" data-setor="${setor}">Produção · ${escapeHtml(nomeSetorImpressao(setor))}</button>`).join("")}</div>`;
   const cancelando=confirmacaoComanda===`cancelar:${c.id}`;
-  return `<article class="card comanda-card" data-comanda-card="${id}" data-search="${escapeHtml(c.identificador.toLocaleLowerCase("pt-BR"))}"><div class="comanda-head"><div><h3>Comanda ${escapeHtml(c.identificador)}</h3><span class="muted">${hora?`Aberta às ${hora} · `:""}${qtd} ${qtd===1?"item":"itens"}</span></div><strong class="comanda-total" data-c-total-head>${moeda(total)}</strong></div><div class="pos-cart">${linhas||'<div class="empty">Comanda sem itens.</div>'}</div><div class="actions"><button class="btn small" data-action="comanda-adicionar" data-comanda="${id}">Adicionar itens</button>${cancelando?`<button class="btn small danger" data-action="comanda-confirmar-cancelamento" data-comanda="${id}">Confirmar cancelamento</button><button class="btn small" data-action="comanda-cancelar-confirmacao">Voltar</button>`:`<button class="btn small danger" data-action="comanda-cancelar" data-comanda="${id}">Cancelar comanda</button>`}</div>${htmlDesconto("comanda",c.desconto,c.id)}<div class="pos-totals"><div class="pos-total-row"><span>Subtotal</span><strong data-c-subtotal>${moeda(sub)}</strong></div><div class="pos-total-row" data-c-desconto-linha ${desc>0?"":"hidden"}><span>Desconto</span><strong data-c-desconto>− ${moeda(desc)}</strong></div><div class="pos-total-row final"><span>Total</span><strong data-c-total>${moeda(total)}</strong></div></div><h3>Forma de pagamento</h3><div class="pos-payment-options">${["Dinheiro","Pix","Crédito","Débito"].map(m=>`<button class="btn ${pag===m?"selected":""}" type="button" data-action="comanda-pagamento" data-comanda="${id}" data-method="${m}">${m}</button>`).join("")}</div><button class="btn primary" style="width:100%" data-action="comanda-fechar" data-comanda="${id}" data-c-fechar ${c.itens.length&&caixa?"":"disabled"}>Fechar e registrar venda · ${moeda(total)}</button></article>`;
+  return `<article class="card comanda-card" data-comanda-card="${id}" data-search="${escapeHtml(c.identificador.toLocaleLowerCase("pt-BR"))}"><div class="comanda-head"><div><h3>Comanda ${escapeHtml(c.identificador)}</h3><span class="muted">${hora?`Aberta às ${hora} · `:""}${qtd} ${qtd===1?"item":"itens"}</span></div><strong class="comanda-total" data-c-total-head>${moeda(total)}</strong></div><div class="pos-cart">${linhas||'<div class="empty">Comanda sem itens.</div>'}</div><div class="actions"><button class="btn small" data-action="comanda-adicionar" data-comanda="${id}">Adicionar itens</button>${cancelando?`<button class="btn small danger" data-action="comanda-confirmar-cancelamento" data-comanda="${id}">Confirmar cancelamento</button><button class="btn small" data-action="comanda-cancelar-confirmacao">Voltar</button>`:`<button class="btn small danger" data-action="comanda-cancelar" data-comanda="${id}">Cancelar comanda</button>`}</div>${botoesImpressao}${htmlDesconto("comanda",c.desconto,c.id)}<div class="pos-totals"><div class="pos-total-row"><span>Subtotal</span><strong data-c-subtotal>${moeda(sub)}</strong></div><div class="pos-total-row" data-c-desconto-linha ${desc>0?"":"hidden"}><span>Desconto</span><strong data-c-desconto>− ${moeda(desc)}</strong></div><div class="pos-total-row final"><span>Total</span><strong data-c-total>${moeda(total)}</strong></div></div><h3>Forma de pagamento</h3><div class="pos-payment-options">${["Dinheiro","Pix","Crédito","Débito"].map(m=>`<button class="btn ${pag===m?"selected":""}" type="button" data-action="comanda-pagamento" data-comanda="${id}" data-method="${m}">${m}</button>`).join("")}</div><button class="btn primary" style="width:100%" data-action="comanda-fechar" data-comanda="${id}" data-c-fechar ${c.itens.length&&caixa?"":"disabled"}>Fechar e registrar venda · ${moeda(total)}</button></article>`;
  }).join("");
  painel.innerHTML=`<div class="pos-toolbar"><div><h2>Comandas abertas</h2><div class="muted">${escapeHtml(empresaSelecionada?.name||"Atendimento")} · ${lista.length} ${lista.length===1?"comanda":"comandas"} · ${moeda(totalAberto)} em aberto</div></div><label class="field pos-search"><span>Buscar comanda</span><input type="search" data-comanda-search placeholder="Nome ou número"></label></div>${caixa?"":'<div class="notice warning">Caixa fechado. Abra o caixa na aba 1.2. Caixa para poder fechar comandas e registrar as vendas.</div>'}${statusComanda?`<div class="notice" role="status">${escapeHtml(statusComanda)}</div>`:""}${lista.length?`<div class="comanda-grid">${cards}</div>`:'<div class="card empty">Nenhuma comanda aberta. No PDV, monte o pedido, digite o nome ou número da comanda e toque em “Enviar para comanda”.</div>'}`;
 }
@@ -952,7 +985,7 @@ function totalPedidoPdv(){return dados.pedidoPdv.reduce((total,item)=>total+n(it
 function renderCardapio(){
  const painel=$("#panel-cardapio");
  const vendaveis=dados.fichas.filter(f=>f.tipoProduto!=="semiacabado");
- painel.innerHTML=`<div class="toolbar"><div><h2>Cardápio</h2><div class="muted">Escolha quais fichas técnicas estarão disponíveis no PDV, confira o preço e defina como cada produto controla estoque.</div></div><label class="field pos-search"><span>Buscar produto</span><input type="search" data-menu-search placeholder="Nome ou categoria"></label></div>${vendaveis.length?`<div class="menu-grid">${vendaveis.map(f=>`<article class="card menu-product" data-menu-card data-name="${escapeHtml(f.nome)}" data-category="${escapeHtml(f.categoria)}"><div class="menu-product-head"><div><h3>${escapeHtml(f.nome||"Produto sem nome")}</h3><span class="pill">${escapeHtml(f.categoria)}</span>${f.combo?'<span class="pill">Combo</span>':""}</div><span class="muted">CMV ${moeda(cmvFicha(f))}</span></div><div class="menu-product-photo">${f.imagemCardapio?`<img src="${escapeHtml(f.imagemCardapio)}" alt="Foto de ${escapeHtml(f.nome)}">`:escapeHtml(String(f.nome||"?").trim().slice(0,1).toLocaleUpperCase("pt-BR"))}</div><div class="actions"><label class="btn small">Adicionar foto<input type="file" accept="image/png,image/jpeg,image/webp" data-menu-image="${escapeHtml(f.id)}" hidden></label>${f.imagemCardapio?`<button class="btn small" type="button" data-action="menu-remover-foto" data-id="${escapeHtml(f.id)}">Remover foto</button>`:""}</div><label class="field"><span>Preço de venda (R$)</span><input type="number" min="0" step="0.01" data-menu-price="${escapeHtml(f.id)}" value="${n(f.precoAtual)>0?escapeHtml(f.precoAtual):""}" placeholder="Defina o preço"></label><label class="field"><span>Consumo de estoque</span><select data-menu-stock-mode="${escapeHtml(f.id)}"><option value="empresa" ${f.modoEstoque==="empresa"?"selected":""}>Usar padrão da empresa</option><option value="insumos" ${f.modoEstoque==="insumos"?"selected":""}>Baixar ingredientes na venda</option><option value="produto-pronto" ${f.modoEstoque==="produto-pronto"?"selected":""}>Baixar produto pronto / usar OP</option></select></label><div class="muted prod-small">Modo atual: ${modoEstoqueFicha(f)==="insumos"?"ingredientes na venda":"produto pronto e reposição por OP"}</div><label class="switch-line"><input class="switch" type="checkbox" data-pdv-visible="${escapeHtml(f.id)}" ${f.publicadoPdv?"checked":""} ${n(f.precoAtual)>0?"":"disabled"}><span>${f.publicadoPdv?"Visível no PDV":"Mostrar no PDV"}</span></label>${n(f.precoAtual)>0?"":'<span class="muted">Informe um preço positivo para ativar no PDV.</span>'}</article>`).join("")}</div>`:'<div class="card empty">${dados.fichas.some(f=>f.tipoProduto==="semiacabado")?"Cadastre produtos acabados ou combos para disponibilizar no PDV.":"Cadastre primeiro as fichas técnicas que deseja vender."}</div>'}`;
+ painel.innerHTML=`<div class="toolbar"><div><h2>Cardápio</h2><div class="muted">Escolha quais fichas técnicas estarão disponíveis no PDV, confira o preço e defina como cada produto controla estoque e impressão.</div></div><label class="field pos-search"><span>Buscar produto</span><input type="search" data-menu-search placeholder="Buscar produto"></label></div>${vendaveis.length?`<div class="menu-grid">${vendaveis.map(f=>`<article class="card menu-product" data-menu-card data-name="${escapeHtml(f.nome)}" data-category="${escapeHtml(f.categoria)}"><div class="menu-product-head"><div><h3>${escapeHtml(f.nome||"Produto sem nome")}</h3><span class="pill">${escapeHtml(f.categoria)}</span>${f.combo?'<span class="pill">Combo</span>':""}</div><span class="muted">CMV ${moeda(cmvFicha(f))}</span></div><div class="menu-product-photo">${f.imagemCardapio?`<img src="${escapeHtml(f.imagemCardapio)}" alt="Foto de ${escapeHtml(f.nome)}">`:escapeHtml(String(f.nome||"?").trim().slice(0,1).toLocaleUpperCase("pt-BR"))}</div><div class="actions"><label class="btn small">Adicionar foto<input type="file" accept="image/png,image/jpeg,image/webp" data-menu-image="${escapeHtml(f.id)}" hidden></label>${f.imagemCardapio?`<button class="btn small" type="button" data-action="menu-remover-foto" data-id="${escapeHtml(f.id)}">Remover foto</button>`:""}</div><label class="field"><span>Preço de venda (R$)</span><input type="number" min="0" step="0.01" data-menu-price="${escapeHtml(f.id)}" value="${n(f.precoAtual)>0?escapeHtml(f.precoAtual):""}" placeholder="Defina o preço"></label><label class="field"><span>Setor de impressão</span><select data-menu-sector="${escapeHtml(f.id)}">${SETORES_IMPRESSAO.map(([id,nome])=>`<option value="${id}" ${f.setorImpressao===id?"selected":""}>${nome}</option>`).join("")}</select></label><label class="field"><span>Consumo de estoque</span><select data-menu-stock-mode="${escapeHtml(f.id)}"><option value="empresa" ${f.modoEstoque==="empresa"?"selected":""}>Usar padrão da empresa</option><option value="insumos" ${f.modoEstoque==="insumos"?"selected":""}>Baixar ingredientes na venda</option><option value="produto-pronto" ${f.modoEstoque==="produto-pronto"?"selected":""}>Baixar produto pronto / usar OP</option></select></label><div class="muted prod-small">Modo atual: ${modoEstoqueFicha(f)==="insumos"?"ingredientes na venda":"produto pronto e reposição por OP"}</div><label class="switch-line"><input class="switch" type="checkbox" data-pdv-visible="${escapeHtml(f.id)}" ${f.publicadoPdv?"checked":""} ${n(f.precoAtual)>0?"":"disabled"}><span>${f.publicadoPdv?"Visível no PDV":"Mostrar no PDV"}</span></label>${n(f.precoAtual)>0?"":'<span class="muted">Informe um preço positivo para ativar no PDV.</span>'}</article>`).join("")}</div>`:'<div class="card empty">${dados.fichas.some(f=>f.tipoProduto==="semiacabado")?"Cadastre produtos acabados ou combos para disponibilizar no PDV.":"Cadastre primeiro as fichas técnicas que deseja vender."}</div>'}`;
 }
 function vendasPorFicha(periodoMs){
  const corte=Date.now()-periodoMs,mapa=new Map();
@@ -1098,9 +1131,13 @@ renderPdv=function(){
  $$(".pos-recent-row",$("#panel-pdv")).forEach((row,index)=>{
   const venda=[...dados.vendasPdv].slice(-5).reverse()[index];
   if(!venda)return;
-  const botao=document.createElement("button");
-  botao.type="button";botao.className="btn small";botao.dataset.action="imprimir-venda";botao.dataset.id=venda.id;botao.textContent="Imprimir";
-  row.append(botao);
+  const botoes=document.createElement("span");botoes.className="actions";
+  const adicionar=(acao,texto,extra={})=>{const botao=document.createElement("button");botao.type="button";botao.className="btn small";botao.dataset.action=acao;botao.dataset.id=venda.id;Object.assign(botao.dataset,extra);botao.textContent=texto;botoes.append(botao)};
+  const setores=[...new Set((venda.itens||[]).map(item=>acharFicha(item.fichaId)?.setorImpressao||"lanches"))];
+  setores.forEach(setor=>adicionar("imprimir-setor-venda",`Produção · ${nomeSetorImpressao(setor)}`,{setor}));
+  if(venda.comanda)adicionar("imprimir-comanda-venda","Comanda");
+  adicionar("imprimir-venda","Comprovante");
+  row.append(botoes);
  });
 };
 function dadosComprovante(venda){
@@ -1147,6 +1184,129 @@ function renderPreviaComprovante(){
   if(wrapper)wrapper.style.width=dados.configImpressao.largura===42?"100%":"min(100%, 340px)";
  }
 }
+function renderPreviaComanda(){
+ const editor=$("[data-comanda-layout]"),logo=$("[data-comanda-logo-preview]"),largura=$("[data-comanda-logo-width]"),label=$("[data-comanda-logo-width-label]");
+ if(editor&&editor.value!==dados.configImpressao.layoutComanda)editor.value=dados.configImpressao.layoutComanda;
+ if(largura){largura.value=String(dados.configImpressao.logoComandaLargura);largura.disabled=!dados.configImpressao.logoComanda}
+ if(label)label.textContent=`${dados.configImpressao.logoComandaLargura}%`;
+ if(logo){
+  logo.hidden=!dados.configImpressao.logoComanda;
+  if(dados.configImpressao.logoComanda&&logo.src!==dados.configImpressao.logoComanda)logo.src=dados.configImpressao.logoComanda;
+  if(!dados.configImpressao.logoComanda)logo.removeAttribute("src");
+  logo.style.width=`${dados.configImpressao.logoComandaLargura}%`;
+ }
+ const remover=$('[data-action="comanda-logo-remover"]');
+ if(remover)remover.disabled=!dados.configImpressao.logoComanda;
+ const status=$("[data-comanda-logo-status]");
+ if(status)status.textContent=dados.configImpressao.logoComanda?"Logo da comanda salva e centralizada.":"Nenhuma logo de comanda adicionada.";
+ const previa=$("[data-comanda-preview]");
+ if(previa){
+  const exemploComanda={identificador:"Mesa 4",criadaEm:new Date().toISOString(),desconto:{tipo:"valor",valor:2.5},itens:[{nome:"X-Burger",quantidade:2,precoUnitario:12.5,obs:"sem cebola"}]};
+  previa.textContent=textoComanda(exemploComanda);
+  const wrapper=previa.parentElement;
+  if(wrapper)wrapper.style.width=dados.configImpressao.largura===42?"100%":"min(100%, 340px)";
+ }
+}
+function configComandaImpressao(){
+ return {logo:dados.configImpressao.logoComanda,logoLargura:dados.configImpressao.logoComandaLargura,largura:dados.configImpressao.largura};
+}
+function dadosComanda(comanda,venda=null){
+ const subtotal=venda?n(venda.subtotal):totalComanda(comanda);
+ const desconto=venda?n(venda.desconto):calcDesconto(subtotal,comanda.desconto);
+ const data=new Date(venda?.dataHora||comanda.criadaEm||Date.now());
+ return {
+  empresa:String(venda?.empresa||empresaSelecionada?.name||"Atendimento"),
+  comanda:String(comanda.identificador||venda?.comanda||"—"),
+  data:Number.isNaN(data.getTime())?"":data.toLocaleString("pt-BR"),
+  itens:(comanda.itens||venda?.itens||[]).map(item=>`${n(item.quantidade)}x ${String(item.nome||"Produto")}  ${moeda(n(item.precoUnitario)*n(item.quantidade))}${String(item.obs||"").trim()?`\n  Obs: ${String(item.obs).trim()}`:""}`).join("\n"),
+  subtotal:moeda(subtotal),desconto:moeda(desconto),
+  total:moeda(venda?n(venda.total):arred(subtotal-desconto)),
+  pagamento:String(venda?.formaPagamento||"A PAGAR")
+ };
+}
+function textoComanda(comanda,venda=null){
+ const valores=dadosComanda(comanda,venda);
+ return String(dados.configImpressao.layoutComanda||LAYOUT_COMANDA_PADRAO)
+  .replace(/\{\{([a-z]+)\}\}/gi,(_,chave)=>valores[chave.toLowerCase()]??"");
+}
+function nomeSetorImpressao(id){
+ return SETORES_IMPRESSAO.find(([setor])=>setor===id)?.[1]||"Lanches / Cozinha";
+}
+function itensPorSetor(itens){
+ const grupos=new Map();
+ for(const item of itens||[]){
+  const setor=acharFicha(item.fichaId)?.setorImpressao||"lanches";
+  if(!grupos.has(setor))grupos.set(setor,[]);
+  grupos.get(setor).push(item);
+ }
+ return grupos;
+}
+function textoTicketProducao(itens,contexto={}){
+ const data=new Date(contexto.dataHora||Date.now());
+ return [
+  nomeSetorImpressao(contexto.setor||"lanches").toLocaleUpperCase("pt-BR"),
+  `PEDIDO #${contexto.numero||"—"}`,
+  contexto.comanda?`COMANDA: ${contexto.comanda}`:"",
+  Number.isNaN(data.getTime())?"":data.toLocaleString("pt-BR"),
+  "--------------------------------",
+  ...(itens||[]).flatMap(item=>[`${n(item.quantidade)}x ${item.nome||"Produto"}`,String(item.obs||"").trim()?`  Obs: ${String(item.obs).trim()}`:""].filter(Boolean)),
+  "--------------------------------"
+ ].filter(Boolean).join("\n");
+}
+async function imprimirSetorVenda(idVenda,setor,automatico=false){
+ const venda=dados.vendasPdv.find(item=>item.id===idVenda);if(!venda)throw new Error("Esta venda não foi encontrada.");
+ const itens=itensPorSetor(venda.itens).get(setor)||[];
+ if(!itens.length)throw new Error("Não há itens deste setor no pedido.");
+ return imprimirNaRota(setor,textoTicketProducao(itens,{...venda,setor}),{automatico,configLogo:{largura:dados.configImpressao.largura,logo:"",logoLargura:80}});
+}
+async function imprimirSetorComanda(idComanda,setor,automatico=false,itensOverride=null){
+ const comanda=dados.comandas.find(item=>item.id===idComanda);
+ if(!comanda&&!itensOverride)throw new Error("Esta comanda não está aberta.");
+ const itens=itensOverride||itensPorSetor(comanda.itens).get(setor)||[];
+ if(!itens.length)throw new Error("Não há itens deste setor na comanda.");
+ return imprimirNaRota(setor,textoTicketProducao(itens,{numero:comanda?.identificador||"—",comanda:comanda?.identificador,setor}),{automatico,configLogo:{largura:dados.configImpressao.largura,logo:"",logoLargura:80}});
+}
+async function imprimirComanda(idComanda,venda=null){
+ const comanda=dados.comandas.find(item=>item.id===idComanda);
+ if(!comanda&&!venda)throw new Error("Esta comanda não foi encontrada.");
+ const objeto=comanda||{identificador:venda.comanda,criadaEm:venda.dataHora,itens:venda.itens,desconto:{tipo:"valor",valor:venda.desconto}};
+ return imprimirNaRota("comanda",textoComanda(objeto,venda),{automatico:false,configLogo:configComandaImpressao()});
+}
+async function imprimirRotasAutomaticas(venda,{imprimirComandaFechada=false,itensPedido=null,imprimirProducao=true,imprimirComprovanteVenda=true}={}){
+ const erros=[];
+ if(imprimirProducao){
+  const grupos=itensPorSetor(itensPedido||venda.itens);
+  for(const [setor,itens] of grupos){
+   if(dados.configImpressao.roteamentoImpressao[setor]?.modo!=="automatico")continue;
+   try{
+    const texto=textoTicketProducao(itens,{...venda,setor});
+    await imprimirNaRota(setor,texto,{automatico:true,configLogo:{largura:dados.configImpressao.largura,logo:"",logoLargura:80}});
+   }catch(erro){erros.push(erro.message)}
+  }
+ }
+ if(imprimirComandaFechada&&dados.configImpressao.roteamentoImpressao.comanda?.modo==="automatico"){
+  try{await imprimirNaRota("comanda",textoComanda({identificador:venda.comanda,criadaEm:venda.dataHora,itens:venda.itens,desconto:{tipo:"valor",valor:venda.desconto}},venda),{automatico:true,configLogo:configComandaImpressao()})}
+  catch(erro){erros.push(erro.message)}
+ }
+ if(imprimirComprovanteVenda&&dados.configImpressao.roteamentoImpressao.comprovante?.modo==="automatico"){
+  try{await imprimirComprovante(venda,true)}
+  catch(erro){erros.push(erro.message)}
+ }
+ if(erros.length){
+  const texto=`Venda #${venda.numero} registrada, mas a impressão automática falhou: ${[...new Set(erros)].join(" ")}`;
+  if(venda.comanda)statusComanda=texto;else statusPdv=texto;
+  atualizarStatusImpressora(texto);renderModulosVenda();
+ }
+}
+function renderConfiguracaoImpressoras(){
+ const dispositivos=$("#printer-devices"),rotas=$("#printer-routes");
+ if(dispositivos){
+  dispositivos.innerHTML=dados.configImpressao.impressoras.length?`<div class="table-wrap"><table><thead><tr><th>Impressora cadastrada</th><th>Tipo</th><th>Conexão</th><th></th></tr></thead><tbody>${dados.configImpressao.impressoras.map(p=>`<tr><td>${escapeHtml(p.nome)}</td><td>${p.tipo==="usb"?"USB":"Bluetooth"}</td><td>${conexoesImpressora.has(p.id)?'<span class="good">Conectada nesta sessão</span>':'<span class="muted">Desconectada</span>'}</td><td class="actions"><button type="button" class="btn small" data-action="impressora-reconectar" data-id="${escapeHtml(p.id)}" data-tipo="${p.tipo}">Conectar</button><button type="button" class="btn small danger" data-action="impressora-remover" data-id="${escapeHtml(p.id)}">Remover</button></td></tr>`).join("")}</tbody></table></div>`:'<p class="muted">Nenhuma impressora direta cadastrada. Adicione uma via USB ou Bluetooth para habilitar impressão automática por setor.</p>';
+ }
+ if(rotas){
+  rotas.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Setor / operação</th><th>Impressora</th><th>Modo</th></tr></thead><tbody>${ROTAS_IMPRESSAO.map(([id,nome])=>{const rota=dados.configImpressao.roteamentoImpressao[id];const options=`<option value="" ${rota.impressoraId?"":"selected"}>Impressora do sistema (manual)</option>${dados.configImpressao.impressoras.map(p=>`<option value="${escapeHtml(p.id)}" ${p.id===rota.impressoraId?"selected":""}>${escapeHtml(p.nome)} · ${p.tipo==="usb"?"USB":"Bluetooth"}</option>`).join("")}`;return `<tr><td>${escapeHtml(nome)}</td><td><select class="cell-select" data-printer-route="${id}" data-route-field="impressoraId">${options}</select></td><td><select class="cell-select" data-printer-route="${id}" data-route-field="modo"><option value="manual" ${rota.modo==="manual"?"selected":""}>Manual</option><option value="automatico" ${rota.modo==="automatico"?"selected":""}>Automático</option></select></td></tr>`}).join("")}</tbody></table></div><p class="footer-note">O modo automático exige uma impressora USB/Bluetooth conectada nesta sessão. A opção “Impressora do sistema” é sempre manual.</p>`;
+ }
+}
 async function prepararLogoComprovante(arquivo){
  if(!arquivo||!["image/png","image/jpeg","image/webp"].includes(arquivo.type))throw new Error("Escolha uma imagem PNG, JPG ou WebP.");
  if(arquivo.size>10*1024*1024)throw new Error("A imagem deve ter no máximo 10 MB.");
@@ -1163,15 +1323,16 @@ async function prepararLogoComprovante(arquivo){
   return logo;
  }finally{imagem.close()}
 }
-async function bytesLogoEscPos(){
- const logo=dados.configImpressao.logo;
+async function bytesLogoEscPos(configLogo=dados.configImpressao){
+ const logo=configLogo.logo||"";
  if(!logo)return new Uint8Array();
  const resposta=await fetch(logo);
  if(!resposta.ok)throw new Error("Não foi possível ler a logo salva.");
  const imagem=await createImageBitmap(await resposta.blob());
  try{
-  const dots=(dados.configImpressao.largura===42?576:384)*dados.configImpressao.logoLargura/100;
-  const largura=Math.max(1,Math.floor(dots)),altura=Math.max(1,Math.round(imagem.height*largura/imagem.width));
+  const dots=(dados.configImpressao.largura===42?576:384)*(Number(configLogo.logoLargura)||80)/100;
+  const escala=Math.min(dots/imagem.width,800/imagem.height);
+  const largura=Math.max(1,Math.floor(imagem.width*escala)),altura=Math.max(1,Math.round(imagem.height*escala));
   const canvas=document.createElement("canvas");canvas.width=largura;canvas.height=altura;
   const contexto=canvas.getContext("2d",{willReadFrequently:true});
   if(!contexto)throw new Error("Não foi possível converter a logo para impressão.");
@@ -1190,9 +1351,12 @@ async function bytesLogoEscPos(){
  }finally{imagem.close()}
 }
 async function desconectarImpressoras(){
- if(impressoraBluetooth?.device.gatt?.connected)impressoraBluetooth.device.gatt.disconnect();
- impressoraBluetooth=null;
- if(impressoraUsb){const device=impressoraUsb.device;impressoraUsb=null;if(device.opened)await device.close()}
+ const conexoes=[...conexoesImpressora.values()];conexoesImpressora.clear();
+ await Promise.all(conexoes.map(async conexao=>{
+  if(conexao.tipo==="bluetooth"&&conexao.device.gatt?.connected)conexao.device.gatt.disconnect();
+  if(conexao.tipo==="usb"&&conexao.device.opened)await conexao.device.close();
+ }));
+ renderConfiguracaoImpressoras();
 }
 function atualizarStatusImpressora(texto){
  statusImpressora=texto;
@@ -1206,7 +1370,8 @@ function alternarSubAbaConfiguracao(nome){
  $$("#panel-configuracao > .config-panel").forEach(p=>p.classList.toggle("active",p.id===`panel-config-${nome}`));
  if(nome==="impressora"){
   renderPreviaComprovante();
-  atualizarStatusImpressora(impressoraBluetooth?`Bluetooth conectado: ${impressoraBluetooth.device.name||"impressora"}.`:impressoraUsb?`USB conectado: ${impressoraUsb.device.productName||"impressora"}.`:statusImpressora||"Nenhuma impressora conectada diretamente. A impressão pelo navegador continua disponível.");
+  renderPreviaComanda();renderConfiguracaoImpressoras();
+  if(!statusImpressora)atualizarStatusImpressora(conexoesImpressora.size?`${conexoesImpressora.size} impressora(s) conectada(s) nesta sessão.`:"Nenhuma impressora conectada diretamente. A impressão pelo navegador continua disponível.");
  }
 }
 const SERVICOS_BLE_IMPRESSORA=[
@@ -1214,7 +1379,7 @@ const SERVICOS_BLE_IMPRESSORA=[
  "0000ff00-0000-1000-8000-00805f9b34fb",
  "0000ffe0-0000-1000-8000-00805f9b34fb"
 ];
-async function conectarImpressoraBluetooth(){
+async function conectarImpressoraBluetooth(idExistente=""){
  if(!navigator.bluetooth?.requestDevice)throw new Error("Bluetooth direto não está disponível neste navegador. Pareie a impressora nas configurações do sistema e use a impressão do navegador.");
  const device=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:SERVICOS_BLE_IMPRESSORA});
  if(!device.gatt)throw new Error("A impressora selecionada não oferece conexão Bluetooth LE compatível.");
@@ -1225,10 +1390,15 @@ async function conectarImpressoraBluetooth(){
    const caracteristicas=await service.getCharacteristics();
    const characteristic=caracteristicas.find(c=>c.properties.write||c.properties.writeWithoutResponse);
    if(characteristic){
-    await desconectarImpressoras();
-    impressoraBluetooth={device,characteristic};
-    device.addEventListener("gattserverdisconnected",()=>{if(impressoraBluetooth?.device===device){impressoraBluetooth=null;atualizarStatusImpressora("Impressora Bluetooth desconectada.")}});
-    atualizarStatusImpressora(`Bluetooth conectado: ${device.name||"impressora"}.`);
+    const id=idExistente||`ble:${device.id||uid()}`;
+    if(idExistente&&conexoesImpressora.has(id)){const antiga=conexoesImpressora.get(id);if(antiga.device!==device&&antiga.device.gatt?.connected)antiga.device.gatt.disconnect()}
+    if(!idExistente){
+     const nome=(device.name||"Impressora Bluetooth").slice(0,100);
+     if(!dados.configImpressao.impressoras.some(p=>p.id===id))dados.configImpressao.impressoras.push({id,nome,tipo:"bluetooth"});
+    }
+    conexoesImpressora.set(id,{tipo:"bluetooth",device,characteristic});
+    device.addEventListener("gattserverdisconnected",()=>{if(conexoesImpressora.get(id)?.device===device){conexoesImpressora.delete(id);renderConfiguracaoImpressoras();atualizarStatusImpressora(`${device.name||"Impressora Bluetooth"} desconectada.`)}});
+    salvar();renderConfiguracaoImpressoras();atualizarStatusImpressora(`Bluetooth conectado: ${device.name||"impressora"}.`);
     return;
    }
   }catch(erro){
@@ -1238,7 +1408,7 @@ async function conectarImpressoraBluetooth(){
  device.gatt.disconnect();
  throw new Error("Não foi encontrada uma porta de gravação ESC/POS. Este modelo BLE pode exigir o aplicativo ou protocolo do fabricante; tente parear no sistema e imprimir pelo navegador.");
 }
-async function conectarImpressoraUsb(){
+async function conectarImpressoraUsb(idExistente=""){
  if(!navigator.usb?.requestDevice)throw new Error("USB direto não está disponível neste navegador. Use Chrome/Edge em HTTPS ou selecione a impressora instalada pela impressão do navegador.");
  const device=await navigator.usb.requestDevice({filters:[]});
  await device.open();
@@ -1249,11 +1419,17 @@ async function conectarImpressoraUsb(){
   endpoint:alternate.endpoints.find(ep=>ep.direction==="out"&&ep.type==="bulk")
  }))).find(item=>item.endpoint);
  if(!saida){await device.close();throw new Error("O dispositivo USB não oferece uma saída bulk compatível com impressão ESC/POS.")}
- await desconectarImpressoras();
- impressoraUsb={device,interfaceNumber:saida.interfaceNumber,alternateSetting:saida.alternateSetting,endpointNumber:saida.endpoint.number};
+ const id=idExistente||`usb:${device.serialNumber||`${device.vendorId}-${device.productId}-${uid()}`}`;
+ if(idExistente&&conexoesImpressora.has(id)){const antiga=conexoesImpressora.get(id);if(antiga.device!==device&&antiga.device.opened)await antiga.device.close()}
+ if(!idExistente){
+  const nome=(device.productName||`Impressora USB ${device.vendorId.toString(16)}:${device.productId.toString(16)}`).slice(0,100);
+  if(!dados.configImpressao.impressoras.some(p=>p.id===id))dados.configImpressao.impressoras.push({id,nome,tipo:"usb"});
+ }
+ conexoesImpressora.set(id,{tipo:"usb",device,interfaceNumber:saida.interfaceNumber,alternateSetting:saida.alternateSetting,endpointNumber:saida.endpoint.number});
+ salvar();renderConfiguracaoImpressoras();
  atualizarStatusImpressora(`USB conectado: ${device.productName||"impressora"}.`);
 }
-async function bytesEscPos(texto){
+async function bytesEscPos(texto,configLogo=dados.configImpressao){
  const colunas=dados.configImpressao.largura;
  const linhas=String(texto).split(/\r?\n/).flatMap(linha=>{
   if(!linha)return [""];
@@ -1273,15 +1449,17 @@ async function bytesEscPos(texto){
  }).join("\n");
  const textoBasico=linhas.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\x00-\x7f]/g,"?");
  const conteudo=new TextEncoder().encode(textoBasico+"\n\n\n");
- const logo=await bytesLogoEscPos();
+ const logo=await bytesLogoEscPos(configLogo);
  const bytes=new Uint8Array(2+logo.length+conteudo.length+3);
  bytes.set([0x1b,0x40],0);bytes.set(logo,2);bytes.set(conteudo,2+logo.length);bytes.set([0x1d,0x56,0x00],2+logo.length+conteudo.length);
  return bytes;
 }
-async function enviarParaImpressora(texto){
- const bytes=await bytesEscPos(texto);
- if(impressoraBluetooth){
-  const {characteristic}=impressoraBluetooth;
+async function enviarParaImpressora(idImpressora,texto,configLogo=dados.configImpressao){
+ const conexao=conexoesImpressora.get(idImpressora);
+ if(!conexao)throw new Error("A impressora selecionada não está conectada nesta sessão.");
+ const bytes=await bytesEscPos(texto,configLogo);
+ if(conexao.tipo==="bluetooth"){
+  const {characteristic}=conexao;
   for(let i=0;i<bytes.length;i+=160){
    const parte=bytes.slice(i,i+160);
    if(characteristic.properties.writeWithoutResponse&&characteristic.writeValueWithoutResponse)await characteristic.writeValueWithoutResponse(parte);
@@ -1290,8 +1468,8 @@ async function enviarParaImpressora(texto){
   }
   return;
  }
- if(impressoraUsb){
-  const {device,interfaceNumber,alternateSetting,endpointNumber}=impressoraUsb;
+ if(conexao.tipo==="usb"){
+  const {device,interfaceNumber,alternateSetting,endpointNumber}=conexao;
   await device.claimInterface(interfaceNumber);
   try{
    if(alternateSetting!==0)await device.selectAlternateInterface(interfaceNumber,alternateSetting);
@@ -1305,25 +1483,32 @@ async function enviarParaImpressora(texto){
 function escaparHtml(texto){
  return String(texto).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 }
-function imprimirPeloSistema(texto){
+function imprimirPeloSistema(texto,configLogo=dados.configImpressao){
  const janela=window.open("","_blank","width=420,height=700");
  if(!janela)throw new Error("O navegador bloqueou a janela de impressão. Permita pop-ups para este aplicativo e tente novamente.");
  const largura=dados.configImpressao.largura===42?"80mm":"58mm";
- const logo=dados.configImpressao.logo?`<img class="logo" src="${dados.configImpressao.logo}" alt="">`:"";
- janela.document.write(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Comprovante</title><style>@page{size:auto;margin:2mm}html,body{margin:0;padding:0;color:#000;background:#fff}.receipt{width:${largura};margin:0 auto;padding:2mm;box-sizing:border-box}.logo{display:block;width:${dados.configImpressao.logoLargura}%;max-height:35mm;object-fit:contain;margin:0 auto 3mm}pre{margin:0;font:10pt/1.3 "Courier New",monospace;white-space:pre-wrap;overflow-wrap:anywhere}</style><main class="receipt">${logo}<pre>${escaparHtml(texto)}</pre></main></html>`);
+ const logo=configLogo.logo?`<img class="logo" src="${configLogo.logo}" alt="">`:"";
+ janela.document.write(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Comprovante</title><style>@page{size:auto;margin:2mm}html,body{margin:0;padding:0;color:#000;background:#fff}.receipt{width:${largura};margin:0 auto;padding:2mm;box-sizing:border-box}.logo{display:block;width:${Number(configLogo.logoLargura)||80}%;max-height:35mm;object-fit:contain;margin:0 auto 3mm}pre{margin:0;font:10pt/1.3 "Courier New",monospace;white-space:pre-wrap;overflow-wrap:anywhere}</style><main class="receipt">${logo}<pre>${escaparHtml(texto)}</pre></main></html>`);
  janela.document.close();janela.focus();janela.onafterprint=()=>janela.close();setTimeout(()=>janela.print(),250);
 }
-async function imprimirComprovante(venda){
- const texto=textoComprovante(venda);
- if(impressoraBluetooth||impressoraUsb){
-  await enviarParaImpressora(texto);
-  atualizarStatusImpressora("Comprovante enviado à impressora conectada.");
- }else imprimirPeloSistema(texto);
+async function imprimirNaRota(idRota,texto,{automatico=false,configLogo=dados.configImpressao}={}){
+ const rota=dados.configImpressao.roteamentoImpressao[idRota]||{impressoraId:"",modo:"manual"};
+ if(automatico&&rota.modo!=="automatico")return false;
+ const nomeRota=ROTAS_IMPRESSAO.find(([id])=>id===idRota)?.[1]||idRota;
+ if(automatico&&!rota.impressoraId)throw new Error(`Configure uma impressora para “${nomeRota}” antes de ativar a impressão automática.`);
+ if(rota.impressoraId){
+  if(!conexoesImpressora.has(rota.impressoraId))throw new Error(`A impressora selecionada para “${nomeRota}” está desconectada. Reconecte-a em Configuração.`);
+  await enviarParaImpressora(rota.impressoraId,texto,configLogo);return true;
+ }
+ imprimirPeloSistema(texto,configLogo);return true;
 }
-async function imprimirVenda(id){
+async function imprimirComprovante(venda,automatico=false){
+ return imprimirNaRota("comprovante",textoComprovante(venda),{automatico});
+}
+function imprimirVenda(id){
  const venda=dados.vendasPdv.find(item=>item.id===id);
  if(!venda)throw new Error("Esta venda não foi encontrada.");
- await imprimirComprovante(venda);
+ return imprimirComprovante(venda);
 }
 function renderTudo(){
  const alterouInsumosSemiAcabados=sincronizarInsumosSemiAcabados();
@@ -1507,6 +1692,25 @@ function gravarCampo(target,value){
 }
 document.addEventListener("change",e=>{
  const t=e.target;
+ if(t.matches("[data-printer-route]")){
+  const rota=dados.configImpressao.roteamentoImpressao[t.dataset.printerRoute];
+  if(!rota)return;
+  rota[t.dataset.routeField]=t.dataset.routeField==="modo"?t.value:t.value;
+  if(rota.modo==="automatico"&&!rota.impressoraId){
+   rota.modo="manual";atualizarStatusImpressora("Selecione uma impressora USB/Bluetooth cadastrada antes de ativar o modo automático.");
+  }
+  salvar();renderConfiguracaoImpressoras();return;
+ }
+ if(t.matches("[data-comanda-logo-file]")){
+  const arquivo=t.files?.[0];if(!arquivo)return;
+  prepararLogoComprovante(arquivo).then(logo=>{dados.configImpressao.logoComanda=logo;salvar();renderPreviaComanda()})
+   .catch(erro=>{$("[data-comanda-logo-status]").textContent=`Não foi possível carregar a logo: ${erro.message}`})
+   .finally(()=>{t.value=""});
+  return;
+ }
+ if(t.matches("[data-comanda-logo-width]")){
+  dados.configImpressao.logoComandaLargura=Math.max(20,Math.min(100,Number(t.value)||80));salvar();renderPreviaComanda();return;
+ }
  if(t.matches("[data-print-logo-file]")){
   const arquivo=t.files?.[0];
   if(!arquivo)return;
@@ -1540,6 +1744,12 @@ document.addEventListener("input",e=>{
  }
  if(t.matches("[data-print-layout]")){
   dados.configImpressao.layout=t.value.slice(0,8000);salvar();renderPreviaComprovante();return;
+ }
+ if(t.matches("[data-comanda-logo-width]")){
+  dados.configImpressao.logoComandaLargura=Math.max(20,Math.min(100,Number(t.value)||80));renderPreviaComanda();return;
+ }
+ if(t.matches("[data-comanda-layout]")){
+  dados.configImpressao.layoutComanda=t.value.slice(0,8000);salvar();renderPreviaComanda();return;
  }
  if(t.matches("[data-comanda-input]")){comandaPdv=t.value;return}
  if(t.matches("[data-pdv-obs]")){const item=dados.pedidoPdv.find(x=>x.linhaId===t.dataset.pdvObs);if(item){item.obs=t.value.slice(0,120);salvar()}return}
@@ -1812,6 +2022,11 @@ document.addEventListener("change",async e=>{
    if(ficha&&n(ficha.precoAtual)<=0){ficha.publicadoPdv=false;dados.pedidoPdv=dados.pedidoPdv.filter(item=>item.fichaId!==ficha.id)}
    salvar();renderCardapio();return;
  }
+ if(t.matches("[data-menu-sector]")){
+   const ficha=acharFicha(t.dataset.menuSector);
+   if(ficha&&SETORES_IMPRESSAO.some(([setor])=>setor===t.value)){ficha.setorImpressao=t.value;salvar()}
+   return;
+ }
  if(t.matches("[data-pdv-visible]")){
    const ficha=acharFicha(t.dataset.pdvVisible);
    if(ficha){
@@ -1846,14 +2061,24 @@ document.addEventListener("click",e=>{
  const producaoSubtab=e.target.closest("[data-producao-subtab]");if(producaoSubtab){alternarSubAbaProducao(producaoSubtab.dataset.producaoSubtab);return}
  const tab=e.target.closest("[data-tab]");if(tab){alternarAba(tab.dataset.tab);return}
  const b=e.target.closest("[data-action]");if(!b)return;const act=b.dataset.action,card=b.closest("[data-ficha]"),f=acharFicha(card?.dataset.ficha);
- if(act==="impressora-conectar-bluetooth"){
+ if(act==="impressora-adicionar-bluetooth"){
   conectarImpressoraBluetooth().catch(erro=>atualizarStatusImpressora(erro.message));return;
  }
- if(act==="impressora-conectar-usb"){
+ if(act==="impressora-adicionar-usb"){
   conectarImpressoraUsb().catch(erro=>atualizarStatusImpressora(erro.message));return;
  }
- if(act==="impressora-desconectar"){
-  desconectarImpressoras().then(()=>atualizarStatusImpressora("Impressora desconectada.")).catch(erro=>atualizarStatusImpressora(`Falha ao desconectar: ${erro.message}`));return;
+ if(act==="impressora-reconectar"){
+  const conectar=b.dataset.tipo==="usb"?conectarImpressoraUsb(b.dataset.id):conectarImpressoraBluetooth(b.dataset.id);
+  conectar.catch(erro=>atualizarStatusImpressora(erro.message));return;
+ }
+ if(act==="impressora-remover"){
+  const id=b.dataset.id,conexao=conexoesImpressora.get(id);
+  if(conexao?.tipo==="bluetooth"&&conexao.device.gatt?.connected)conexao.device.gatt.disconnect();
+  if(conexao?.tipo==="usb"&&conexao.device.opened)conexao.device.close().catch(erro=>atualizarStatusImpressora(`Falha ao desconectar USB: ${erro.message}`));
+  conexoesImpressora.delete(id);
+  dados.configImpressao.impressoras=dados.configImpressao.impressoras.filter(p=>p.id!==id);
+  for(const [rota,config] of Object.entries(dados.configImpressao.roteamentoImpressao))if(config.impressoraId===id){config.impressoraId="";config.modo="manual"}
+  salvar();renderConfiguracaoImpressoras();return;
  }
  if(act==="impressora-teste"){
   const venda={numero:"000123",dataHora:new Date().toISOString(),empresa:empresaSelecionada?.name||"Sua empresa",formaPagamento:"Pix",subtotal:27.5,desconto:2.5,total:25,comanda:"Mesa 4",itens:[{nome:"X-Burger",quantidade:2,precoUnitario:12.5,obs:"sem cebola"}]};
@@ -1862,8 +2087,29 @@ document.addEventListener("click",e=>{
  if(act==="impressora-logo-remover"){
   dados.configImpressao.logo="";salvar();renderPreviaComprovante();return;
  }
+ if(act==="comanda-logo-remover"){
+  dados.configImpressao.logoComanda="";salvar();renderPreviaComanda();return;
+ }
+ if(act==="comanda-imprimir-teste"){
+  const c={identificador:"Mesa 4",criadaEm:new Date().toISOString(),desconto:{tipo:"valor",valor:2.5},itens:[{nome:"X-Burger",quantidade:2,precoUnitario:12.5,obs:"sem cebola"}]};
+  imprimirNaRota("comanda",textoComanda(c),{configLogo:configComandaImpressao()}).catch(erro=>atualizarStatusImpressora(`Falha na impressão da comanda: ${erro.message}`));return;
+ }
  if(act==="imprimir-venda"){
   imprimirVenda(b.dataset.id).catch(erro=>atualizarStatusImpressora(`Falha na impressão: ${erro.message}`));return;
+ }
+ if(act==="imprimir-comanda-aberta"){
+  imprimirComanda(b.dataset.comanda).catch(erro=>atualizarStatusImpressora(`Falha na impressão da comanda: ${erro.message}`));return;
+ }
+ if(act==="imprimir-comanda-venda"){
+  const venda=dados.vendasPdv.find(item=>item.id===b.dataset.id);
+  if(venda)imprimirComanda("",venda).catch(erro=>atualizarStatusImpressora(`Falha na impressão da comanda: ${erro.message}`));
+  return;
+ }
+ if(act==="imprimir-setor-venda"){
+  imprimirSetorVenda(b.dataset.id,b.dataset.setor).catch(erro=>atualizarStatusImpressora(`Falha na impressão de produção: ${erro.message}`));return;
+ }
+ if(act==="imprimir-setor-comanda"){
+  imprimirSetorComanda(b.dataset.comanda,b.dataset.setor).catch(erro=>atualizarStatusImpressora(`Falha na impressão de produção: ${erro.message}`));return;
  }
  if(act==="prod-gerar-pedido"){gerarPedidoCompraBaixo();return}
  if(act==="prod-criar-sugestao"){
@@ -1919,9 +2165,12 @@ document.addEventListener("click",e=>{
    }
    const comDesconto=n(descontoPdv.valor)>0;
    if(comDesconto)comanda.desconto=normalizarDesconto(descontoPdv);
+   const pedidoEnviado=dados.pedidoPdv.map(item=>({...item,obs:String(item.obs||"").trim()}));
    dados.pedidoPdv=[];comandaPdv="";remocaoPdvPendente="";descontoPdv={tipo:"valor",valor:""};
    statusPdv=(existente?`Itens adicionados à comanda ${comanda.identificador}.`:`Comanda ${comanda.identificador} criada com o pedido.`)+(comDesconto?" Desconto aplicado à comanda.":"");
-   salvar();renderPdv();if(abaPermitida("comanda"))renderComanda();return;
+   salvar();renderPdv();if(abaPermitida("comanda"))renderComanda();
+   imprimirRotasAutomaticas({numero:comanda.identificador,comanda:comanda.identificador,dataHora:new Date().toISOString(),itens:pedidoEnviado},{itensPedido:pedidoEnviado,imprimirComprovanteVenda:false}).catch(erro=>atualizarStatusImpressora(`Falha na impressão automática de produção: ${erro.message}`));
+   return;
  }
  if(act&&act.startsWith("comanda-")){
    const c=acharComanda(b.dataset.comanda);
@@ -1950,7 +2199,9 @@ document.addEventListener("click",e=>{
      catch(erro){statusComanda=erro.message;renderComanda();return}
      dados.vendasPdv.push(venda);dados.comandas=dados.comandas.filter(x=>x.id!==c.id);delete pagamentoComanda[c.id];confirmacaoComanda="";
      statusComanda=`Comanda ${c.identificador} fechada: venda #${venda.numero} registrada. Confira o recebimento do pagamento.`;
-     salvar();renderComanda();if(abaPermitida("pdv"))renderPdv();if(abaPermitida("caixa"))renderCaixa();return;
+     salvar();renderComanda();if(abaPermitida("pdv"))renderPdv();if(abaPermitida("caixa"))renderCaixa();
+     imprimirRotasAutomaticas(venda,{imprimirComandaFechada:true,imprimirProducao:false});
+     return;
    }
    return;
  }
@@ -1963,7 +2214,9 @@ document.addEventListener("click",e=>{
    try{aplicarBaixaEstoque(necessidadesVenda(venda.itens),"venda",venda.id)}
    catch(erro){statusPdv=erro.message;renderPdv();return}
    dados.vendasPdv.push(venda);dados.pedidoPdv=[];remocaoPdvPendente="";descontoPdv={tipo:"valor",valor:""};
-   statusPdv=`Venda #${venda.numero} registrada no histórico. Confira o recebimento do pagamento.`;salvar();renderPdv();if(abaPermitida("caixa"))renderCaixa();return;
+   statusPdv=`Venda #${venda.numero} registrada no histórico. Confira o recebimento do pagamento.`;salvar();renderPdv();if(abaPermitida("caixa"))renderCaixa();
+   imprimirRotasAutomaticas(venda);
+   return;
  }
  if(act==="caixa-abrir"){
    if(caixaAberto())return;
