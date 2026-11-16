@@ -260,7 +260,7 @@ const ABAS_PRINCIPAIS = ["pdv","cardapio","producao","ficha-tecnica","configurac
 const ABAS_TECNICAS = ["insumos", "fichas", "cmo", "precificacao", "analise"];
 const ABAS_PDV = ["pdv", "comanda", "caixa", "relatorio"];
 const ABAS_PRODUCAO = ["painel", "ordens", "estoque", "compras", "parametros"];
-const UNIDADES = ["g", "kg", "ml", "L", "un"];
+const UNIDADES = ["g", "kg", "ml", "L", "un", "PCT"];
 const VERSAO_IMPORTACAO = "hamburgueria-2026-11-v2";
 const LAYOUT_COMPROVANTE_PADRAO = "{{empresa}}\nCOMPROVANTE DE VENDA\nVenda #{{numero}}\n{{data}}\n{{comanda}}\n--------------------------------\n{{itens}}\n--------------------------------\nSubtotal: {{subtotal}}\nDesconto: {{desconto}}\nTOTAL: {{total}}\nPagamento: {{pagamento}}\nObrigado pela preferência!\n";
 const LAYOUT_COMANDA_PADRAO = "{{empresa}}\nCOMANDA {{comanda}}\n{{data}}\n--------------------------------\n{{itens}}\n--------------------------------\nSubtotal: {{subtotal}}\nDesconto: {{desconto}}\nTOTAL: {{total}}\n";
@@ -726,9 +726,10 @@ function sincronizarInsumosSemiAcabados(){
 }
 function fatorConversao(origem,destino){
   if(origem===destino)return 1;
-  const grupos={g:{"kg":1000},kg:{"g":.001},ml:{"L":1000},L:{"ml":.001},un:{}};
+  const grupos={g:{"kg":1000},kg:{"g":.001},ml:{"L":1000},L:{"ml":.001},un:{},PCT:{}};
   return grupos[origem]?.[destino]||0;
 }
+function rotuloUnidade(unidade){return unidade==="PCT"?"PCT (pacote)":unidade}
 function arredQuantidade(valor){return Math.round(valor*1000)/1000}
 function registrarMovimento(tipo,referencia,quantidade,origem,origemId,observacao=""){
  const item=tipo==="insumo"?acharInsumo(referencia):acharFicha(referencia);
@@ -1589,13 +1590,13 @@ function renderInsumos(){
   const p=$("#panel-insumos");
   if(sincronizarInsumosSemiAcabados())salvar();
   p.innerHTML=`<div class="toolbar"><div><h2>Insumos</h2><div class="muted">Cadastre o custo de compra; as fichas calculam automaticamente o custo proporcional.</div></div><button class="btn primary" data-action="novo-insumo">+ Novo insumo</button></div>
-  <div class="card table-wrap"><table><thead><tr><th>Nome</th><th>Unidade</th><th class="numeric">Preço pago</th><th class="numeric">Quantidade na compra</th><th class="numeric">Custo por unidade</th><th></th></tr></thead><tbody>${dados.insumos.length?dados.insumos.map(i=>{const semi=fichaSemiAcabado(i);return `<tr data-insumo="${escapeHtml(i.id)}"><td>${semi?`<span class="cell-input name">${escapeHtml(i.nome)}</span><span class="pill">Semi-acabado</span>`:`<input class="cell-input name" data-field="nome" value="${escapeHtml(i.nome)}" aria-label="Nome do insumo">`}</td><td>${semi?`<span class="pill">${escapeHtml(i.unidade)}</span>`:`<select class="cell-select" data-field="unidade">${UNIDADES.map(u=>`<option ${u===i.unidade?"selected":""}>${u}</option>`).join("")}</select>`}</td><td>${semi?`<span>${moeda(custoInsumo(i))}</span>`:`<input class="cell-input" type="number" min="0" step="0.01" data-field="preco" value="${escapeHtml(i.preco)}" aria-label="Preço pago">`}</td><td>${semi?'<span class="muted">Produção própria</span>':`<input class="cell-input" type="number" min="0" step="any" data-field="quantidade" value="${escapeHtml(i.quantidade)}" aria-label="Quantidade na compra">`}</td><td class="numeric"><span id="custo-insumo-${escapeHtml(i.id)}">${moeda(custoInsumo(i))} / ${escapeHtml(i.unidade)}</span></td><td>${semi?'<span class="muted">Gerenciado pela ficha</span>':botaoExcluir("insumo",i.id)}</td></tr>`}).join(""):`<tr><td class="empty" colspan="6">Nenhum insumo cadastrado.</td></tr>`}</tbody></table></div>`;
+  <div class="card table-wrap"><table><thead><tr><th>Nome</th><th>Unidade</th><th class="numeric">Preço pago</th><th class="numeric">Quantidade na compra</th><th class="numeric">Custo por unidade</th><th></th></tr></thead><tbody>${dados.insumos.length?dados.insumos.map(i=>{const semi=fichaSemiAcabado(i);return `<tr data-insumo="${escapeHtml(i.id)}"><td>${semi?`<span class="cell-input name">${escapeHtml(i.nome)}</span><span class="pill">Semi-acabado</span>`:`<input class="cell-input name" data-field="nome" value="${escapeHtml(i.nome)}" aria-label="Nome do insumo">`}</td><td>${semi?`<span class="pill">${escapeHtml(rotuloUnidade(i.unidade))}</span>`:`<select class="cell-select" data-field="unidade">${UNIDADES.map(u=>`<option value="${u}" ${u===i.unidade?"selected":""}>${escapeHtml(rotuloUnidade(u))}</option>`).join("")}</select>`}</td><td>${semi?`<span>${moeda(custoInsumo(i))}</span>`:`<input class="cell-input" type="number" min="0" step="0.01" data-field="preco" value="${escapeHtml(i.preco)}" aria-label="Preço pago">`}</td><td>${semi?'<span class="muted">Produção própria</span>':`<input class="cell-input" type="number" min="0" step="any" data-field="quantidade" value="${escapeHtml(i.quantidade)}" aria-label="Quantidade na compra">`}</td><td class="numeric"><span id="custo-insumo-${escapeHtml(i.id)}">${moeda(custoInsumo(i))} / ${escapeHtml(rotuloUnidade(i.unidade))}</span></td><td>${semi?'<span class="muted">Gerenciado pela ficha</span>':botaoExcluir("insumo",i.id)}</td></tr>`}).join(""):`<tr><td class="empty" colspan="6">Nenhum insumo cadastrado.</td></tr>`}</tbody></table></div>`;
 }
 function botaoExcluir(tipo,id){return `<span class="delete-box" data-delete-box="${tipo}-${escapeHtml(id)}"><button class="btn small danger" data-action="pedir-exclusao" data-tipo="${tipo}" data-id="${escapeHtml(id)}">Excluir</button></span>`}
-function optionsInsumos(sel,excluirFichaId=""){return `<option value="">Selecione</option>${dados.insumos.filter(i=>i.semiAcabadoFichaId!==excluirFichaId).map(i=>`<option value="${escapeHtml(i.id)}" ${i.id===sel?"selected":""}>${escapeHtml(i.nome)} (${escapeHtml(i.unidade)})${i.semiAcabadoFichaId?" · semi-acabado":""}</option>`).join("")}`}
+function optionsInsumos(sel,excluirFichaId=""){return `<option value="">Selecione</option>${dados.insumos.filter(i=>i.semiAcabadoFichaId!==excluirFichaId).map(i=>`<option value="${escapeHtml(i.id)}" ${i.id===sel?"selected":""}>${escapeHtml(i.nome)} (${escapeHtml(rotuloUnidade(i.unidade))})${i.semiAcabadoFichaId?" · semi-acabado":""}</option>`).join("")}`}
 function opcoesUnidade(item){
   const ins=acharInsumo(item.referencia), opts=ins?UNIDADES.filter(u=>u===ins.unidade||fatorConversao(ins.unidade,u)>0):UNIDADES;
-  return opts.map(u=>`<option ${u===item.unidade?"selected":""}>${u}</option>`).join("");
+  return opts.map(u=>`<option value="${u}" ${u===item.unidade?"selected":""}>${escapeHtml(rotuloUnidade(u))}</option>`).join("");
 }
 function seletorItem(ficha,item){
   if(ficha.tipoProduto==="combo"){
@@ -1616,7 +1617,7 @@ function renderFicha(f,idx){
     <div class="field"><label>Tipo de produto</label><select data-field="tipoProduto">${TIPOS_PRODUTO.map(([valor,label])=>`<option value="${valor}" ${f.tipoProduto===valor?"selected":""}>${label}</option>`).join("")}</select></div>
     <div class="field"><label>Categoria comercial</label><select data-field="categoria">${categoriasEmpresa().map(c=>`<option ${f.categoria===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}</select></div>
     <div class="field"><label>${f.tipoProduto==="semiacabado"?"Rendimento produzido":"Porções (rendimento)"}</label><input type="number" min="0.001" step="any" data-field="porcoes" value="${escapeHtml(f.porcoes)}"></div>
-    ${f.tipoProduto==="semiacabado"?`<div class="field"><label>Unidade do semi-acabado</label><select data-field="unidadeSemiAcabado">${UNIDADES.map(u=>`<option value="${u}" ${f.unidadeSemiAcabado===u?"selected":""}>${u}</option>`).join("")}</select></div>`:""}
+    ${f.tipoProduto==="semiacabado"?`<div class="field"><label>Unidade do semi-acabado</label><select data-field="unidadeSemiAcabado">${UNIDADES.map(u=>`<option value="${u}" ${f.unidadeSemiAcabado===u?"selected":""}>${escapeHtml(rotuloUnidade(u))}</option>`).join("")}</select></div>`:""}
   </div>
   <div class="table-wrap"><table><thead><tr><th>Ingrediente</th><th class="numeric">Quantidade</th><th>Unidade</th><th class="numeric">Custo da linha</th><th>Ações</th></tr></thead><tbody>${f.itens.map((it,j)=>`<tr data-item="${escapeHtml(it.id)}"><td>${seletorItem(f,it)}</td><td><input class="cell-input" type="number" min="0" step="any" data-field="quantidade" value="${escapeHtml(it.quantidade)}" aria-label="Quantidade"></td><td>${it.tipo==="ficha"?'<span class="pill">un</span>':`<select class="cell-select" data-field="unidade">${opcoesUnidade(it)}</select>`}</td><td class="numeric"><span id="custo-item-${escapeHtml(it.id)}">${moeda(custoItem(it))}</span></td><td class="actions"><button class="btn small" data-action="mover-item" data-dir="-1" aria-label="Subir ingrediente">▲</button><button class="btn small" data-action="mover-item" data-dir="1" aria-label="Descer ingrediente">▼</button>${botaoExcluir("item",it.id)}</td></tr>`).join("")}</tbody></table></div>
   ${!f.itens.length&&Number.isFinite(f.cmvImportado)?'<div class="notice">CMV, preço sugerido e lucro foram importados do resumo fornecido. Ele não incluía ingredientes nem quantidades; adicione ingredientes para calcular a ficha a partir da receita.</div>':""}
@@ -1684,7 +1685,7 @@ function renderAnalise(){
  <div id="relatorio-ia" class="report">${dados.ultimaAnalise?markdownHtml(dados.ultimaAnalise):'<p class="muted">A última análise aparecerá aqui. A geração requer uma chave de API Anthropic.</p>'}</div></div>`;
 }
 function atualizarCalculos(){
- dados.insumos.forEach(i=>{const el=$(`#custo-insumo-${CSS.escape(i.id)}`);if(el)el.textContent=`${moeda(custoInsumo(i))} / ${i.unidade}`});
+ dados.insumos.forEach(i=>{const el=$(`#custo-insumo-${CSS.escape(i.id)}`);if(el)el.textContent=`${moeda(custoInsumo(i))} / ${rotuloUnidade(i.unidade)}`});
  dados.fichas.forEach(f=>{
    const total=$(`#total-${CSS.escape(f.id)}`),cmv=$(`#cmv-${CSS.escape(f.id)}`),sug=$(`#sugerido-${CSS.escape(f.id)}`),cmvpct=$(`#cmvpct-${CSS.escape(f.id)}`),margemRealEl=$(`#margem-real-${CSS.escape(f.id)}`);
    if(total)total.textContent=moeda(totalFicha(f));if(cmv)cmv.textContent=moeda(cmvFicha(f));if(sug)sug.textContent=Number.isFinite(precoSugerido(f))?moeda(precoSugerido(f)):rotuloPreco(f);if(cmvpct)cmvpct.textContent=n(f.precoAtual)>0?pct(cmvFicha(f)/n(f.precoAtual)*100):"—";
