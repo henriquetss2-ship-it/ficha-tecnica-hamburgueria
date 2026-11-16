@@ -204,6 +204,18 @@
           <div id="admin-access-card" class="card" hidden>
             <h3>Logins e acessos</h3>
             <p>Crie logins, defina as empresas liberadas e gerencie permissões. Os usuários também podem alterar a própria senha pelo botão no cabeçalho.</p>
+            <section aria-labelledby="admin-companies-title">
+              <h4 id="admin-companies-title">Empresas cadastradas</h4>
+              <p class="muted">Somente o administrador pode cadastrar empresas. O novo cadastro começa sem dados e não libera acesso aos demais logins automaticamente.</p>
+              <div id="admin-companies-list" class="check-list" aria-live="polite"></div>
+              <form id="form-criar-empresa" class="login-create">
+                <div class="login-create-fields">
+                  <div class="field"><label for="nova-empresa-nome">Nome da empresa</label><input id="nova-empresa-nome" type="text" maxlength="100" autocomplete="organization" required></div>
+                </div>
+                <div class="login-create-actions"><button id="criar-empresa" class="btn primary" type="submit">Criar empresa</button></div>
+              </form>
+              <p id="criar-empresa-status" class="muted" role="status" aria-live="polite"></p>
+            </section>
             <form id="form-criar-login" class="login-create">
               <div class="login-create-fields">
                 <div class="field"><label for="novo-login">Novo login</label><input id="novo-login" type="text" autocomplete="off" minlength="3" maxlength="32" pattern="[A-Za-z0-9._\-]+" title="Use de 3 a 32 letras, números, ponto, traço ou sublinhado." required></div>
@@ -430,6 +442,7 @@ function mostrarAplicativo(){
   $("#trocar-empresa").hidden=modoLocal;
   $("#admin-access-card").hidden=!ehAdmin;
   $("#convite-empresas").innerHTML=empresasDisponiveis.map(empresa=>`<label class="check-option"><input type="checkbox" data-new-company="${escapeHtml(empresa.id)}" value="${escapeHtml(empresa.id)}" ${empresa.id===empresaSelecionada?.id?"checked":""}> ${escapeHtml(empresa.name)}</label>`).join("");
+  renderEmpresasAdministrativas();
   atualizarVisibilidadeAbas();
   renderTudo();
   if(ehAdmin)carregarLoginsAdministrativos();
@@ -572,6 +585,13 @@ async function chamadaRpc(nome,params={}){
   let corpo=null;try{corpo=await resposta.json()}catch{}
   if(!resposta.ok)throw new Error(corpo?.message||corpo?.details||corpo?.hint||mensagemApi(resposta,corpo));
   return corpo;
+}
+function renderEmpresasAdministrativas(){
+  const lista=$("#admin-companies-list");
+  if(!lista)return;
+  lista.innerHTML=empresasDisponiveis.length
+    ?empresasDisponiveis.map(empresa=>`<span class="pill">${escapeHtml(empresa.name)}</span>`).join("")
+    :'<span class="muted">Nenhuma empresa cadastrada.</span>';
 }
 async function carregarLoginsAdministrativos(){
   if(!ehAdmin||modoLocal)return;
@@ -1868,6 +1888,28 @@ $("#form-alterar-senha").addEventListener("submit",async e=>{
     status.textContent=resultado?.message||"Senha alterada com sucesso.";
   }catch(erro){console.error("Falha ao alterar a própria senha:",erro);status.textContent=`Não foi possível alterar a senha: ${erro.message}`}
   finally{botao.disabled=false}
+});
+$("#form-criar-empresa").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const form=e.currentTarget,status=$("#criar-empresa-status"),botao=$("#criar-empresa");
+  if(!ehAdmin||modoLocal){status.textContent="Somente o administrador conectado pode criar empresas.";return}
+  const nome=$("#nova-empresa-nome").value.trim();
+  if(!nome){status.textContent="Informe o nome da empresa.";return}
+  botao.disabled=true;status.textContent="Criando empresa…";
+  try{
+    const resultado=await chamadaRpc("app_admin_create_company",{p_token:await tokenValido(),p_name:nome});
+    const listaAtualizada=await chamadaRpc("app_list_companies",{p_token:await tokenValido()});
+    if(!Array.isArray(listaAtualizada))throw new Error("O banco retornou uma lista de empresas inválida.");
+    empresasDisponiveis=listaAtualizada;
+    renderEmpresasAdministrativas();
+    $("#convite-empresas").innerHTML=empresasDisponiveis.map(empresa=>`<label class="check-option"><input type="checkbox" data-new-company="${escapeHtml(empresa.id)}" value="${escapeHtml(empresa.id)}" ${empresa.id===empresaSelecionada?.id?"checked":""}> ${escapeHtml(empresa.name)}</label>`).join("");
+    form.reset();
+    await carregarLoginsAdministrativos();
+    status.textContent=resultado?.message||`Empresa “${nome}” criada.`;
+  }catch(erro){
+    console.error("Falha ao criar empresa:",erro);
+    status.textContent=`Não foi possível criar a empresa: ${erro.message}`;
+  }finally{botao.disabled=false}
 });
 $("#admin-user-list").addEventListener("submit",async e=>{
   const form=e.target.closest(".admin-user-form");if(!form)return;
